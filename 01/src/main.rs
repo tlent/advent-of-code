@@ -1,14 +1,12 @@
 const INPUT: &str = include_str!("../input.txt");
 
 fn main() {
-    let groups: Vec<Vec<u32>> = INPUT
+    let mut group_sums: Vec<_> = INPUT
         .split("\n\n")
-        .map(|s| s.lines().map(|v| v.parse().unwrap()).collect())
+        .map(|s| s.lines().map(|v| v.parse::<u32>().unwrap()).sum())
         .collect();
-    let mut group_sums: Vec<u32> = groups.iter().map(|group| group.iter().sum()).collect();
     group_sums.sort_unstable();
-    let max_sum = group_sums.last().unwrap();
-    println!("{}", max_sum);
-    let top_three_sum: u32 = group_sums[group_sums.len() - 3..].iter().sum();
-    println!("{}", top_three_sum);
+
+    println!("{}", group_sums.last().unwrap());
+    println!("{}", group_sums.iter().rev().take(3).sum::<u32>());
 }
