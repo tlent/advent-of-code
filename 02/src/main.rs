@@ -2,9 +2,9 @@ const INPUT: &str = include_str!("../input.txt");
 
 #[derive(Debug, Clone, Copy)]
 enum Outcome {
-    Win,
-    Draw,
     Lose,
+    Draw,
+    Win,
 }
 
 impl Outcome {
@@ -28,9 +28,9 @@ impl Outcome {
 
     fn score(&self) -> u32 {
         match self {
-            Self::Win => 6,
-            Self::Draw => 3,
             Self::Lose => 0,
+            Self::Draw => 3,
+            Self::Win => 6,
         }
     }
 }
