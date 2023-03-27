@@ -61,19 +61,14 @@ impl Move {
     }
 
     fn for_outcome(outcome: Outcome, opponent_move: Self) -> Self {
-        use Move::*;
-        match outcome {
-            Outcome::Lose => match opponent_move {
-                Rock => Scissors,
-                Paper => Rock,
-                Scissors => Paper,
-            },
-            Outcome::Draw => opponent_move,
-            Outcome::Win => match opponent_move {
-                Rock => Paper,
-                Paper => Scissors,
-                Scissors => Rock,
-            },
+        match (outcome, opponent_move) {
+            (Outcome::Lose, Move::Rock) => Move::Scissors,
+            (Outcome::Lose, Move::Paper) => Move::Rock,
+            (Outcome::Lose, Move::Scissors) => Move::Paper,
+            (Outcome::Draw, _) => opponent_move,
+            (Outcome::Win, Move::Rock) => Move::Paper,
+            (Outcome::Win, Move::Paper) => Move::Scissors,
+            (Outcome::Win, Move::Scissors) => Move::Rock,
         }
     }
 }
