@@ -3,7 +3,13 @@ use std::ops::RangeInclusive;
 const INPUT: &str = include_str!("../input.txt");
 
 fn main() {
-    let pairs: Vec<_> = INPUT
+    let pairs = parse_input(INPUT);
+    println!("{}", part_one(&pairs));
+    println!("{}", part_two(&pairs));
+}
+
+fn parse_input(input: &str) -> Vec<(RangeInclusive<u32>, RangeInclusive<u32>)> {
+    input
         .lines()
         .map(|line| {
             let parts: Vec<_> = line
@@ -12,10 +18,7 @@ fn main() {
                 .collect();
             (parts[0]..=parts[1], parts[2]..=parts[3])
         })
-        .collect();
-
-    println!("{}", part_one(&pairs));
-    println!("{}", part_two(&pairs));
+        .collect()
 }
 
 fn part_one(pairs: &[(RangeInclusive<u32>, RangeInclusive<u32>)]) -> usize {
