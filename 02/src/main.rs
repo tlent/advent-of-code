@@ -18,11 +18,12 @@ impl Outcome {
     }
 
     fn from_moves(own_move: Move, opponent_move: Move) -> Self {
-        use Move::*;
-        match (own_move, opponent_move) {
-            (Rock, Paper) | (Paper, Scissors) | (Scissors, Rock) => Outcome::Lose,
-            (Rock, Rock) | (Paper, Paper) | (Scissors, Scissors) => Outcome::Draw,
-            (Rock, Scissors) | (Paper, Rock) | (Scissors, Paper) => Outcome::Win,
+        if own_move == opponent_move {
+            Self::Draw
+        } else if own_move.wins_against() == opponent_move {
+            Self::Win
+        } else {
+            Self::Lose
         }
     }
 
@@ -35,7 +36,7 @@ impl Outcome {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Move {
     Rock,
     Paper,
@@ -59,16 +60,28 @@ impl Move {
             Self::Scissors => 3,
         }
     }
+    
+    fn wins_against(&self) -> Self {
+        match self {
+            Self::Rock => Self::Scissors,
+            Self::Paper => Self::Rock,
+            Self::Scissors => Self::Paper
+        }
+    }
+    
+    fn loses_against(&self) -> Self {
+        match self {
+            Self::Rock => Self::Paper,
+            Self::Paper => Self::Scissors,
+            Self::Scissors => Self::Rock
+        }
+    }
 
     fn for_outcome(outcome: Outcome, opponent_move: Self) -> Self {
-        match (outcome, opponent_move) {
-            (Outcome::Lose, Move::Rock) => Move::Scissors,
-            (Outcome::Lose, Move::Paper) => Move::Rock,
-            (Outcome::Lose, Move::Scissors) => Move::Paper,
-            (Outcome::Draw, _) => opponent_move,
-            (Outcome::Win, Move::Rock) => Move::Paper,
-            (Outcome::Win, Move::Paper) => Move::Scissors,
-            (Outcome::Win, Move::Scissors) => Move::Rock,
+        match outcome {
+            Outcome::Lose => opponent_move.wins_against(),
+            Outcome::Draw => opponent_move,
+            Outcome::Win => opponent_move.loses_against()
         }
     }
 }
