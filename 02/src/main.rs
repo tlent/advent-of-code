@@ -60,20 +60,20 @@ impl Move {
             Self::Scissors => 3,
         }
     }
-    
+
     fn wins_against(&self) -> Self {
         match self {
             Self::Rock => Self::Scissors,
             Self::Paper => Self::Rock,
-            Self::Scissors => Self::Paper
+            Self::Scissors => Self::Paper,
         }
     }
-    
+
     fn loses_against(&self) -> Self {
         match self {
             Self::Rock => Self::Paper,
             Self::Paper => Self::Scissors,
-            Self::Scissors => Self::Rock
+            Self::Scissors => Self::Rock,
         }
     }
 
@@ -81,7 +81,7 @@ impl Move {
         match outcome {
             Outcome::Lose => opponent_move.wins_against(),
             Outcome::Draw => opponent_move,
-            Outcome::Win => opponent_move.loses_against()
+            Outcome::Win => opponent_move.loses_against(),
         }
     }
 }
