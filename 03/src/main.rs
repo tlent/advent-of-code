@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 const INPUT: &str = include_str!("../input.txt");
 
 fn priority(byte: u8) -> u32 {
@@ -11,10 +9,12 @@ fn priority(byte: u8) -> u32 {
 }
 
 fn find_common_byte(strs: &[&str]) -> Option<u8> {
-    strs.iter()
-        .map(|str| str.bytes().collect::<HashSet<_>>())
-        .reduce(|a, b| a.intersection(&b).copied().collect())
-        .and_then(|set| set.iter().next().copied())
+    for byte in strs[0].bytes() {
+        if strs[1..].iter().all(|str| str.bytes().any(|b| b == byte)) {
+            return Some(byte);
+        }
+    }
+    None
 }
 
 fn main() {
