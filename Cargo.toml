@@ -45,3 +45,192 @@ path = "src/day_04/bin.rs"
 name = "day_04"
 path = "src/day_04/bench.rs"
 harness = false
+
+# [[bin]]
+# name = "day_05"
+# path = "src/day_05/bin.rs"
+
+# [[bench]]
+# name = "day_05"
+# path = "src/day_05/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_06"
+# path = "src/day_06/bin.rs"
+
+# [[bench]]
+# name = "day_06"
+# path = "src/day_06/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_07"
+# path = "src/day_07/bin.rs"
+
+# [[bench]]
+# name = "day_07"
+# path = "src/day_07/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_08"
+# path = "src/day_08/bin.rs"
+
+# [[bench]]
+# name = "day_08"
+# path = "src/day_08/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_09"
+# path = "src/day_09/bin.rs"
+
+# [[bench]]
+# name = "day_09"
+# path = "src/day_09/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_10"
+# path = "src/day_10/bin.rs"
+
+# [[bench]]
+# name = "day_10"
+# path = "src/day_10/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_11"
+# path = "src/day_11/bin.rs"
+
+# [[bench]]
+# name = "day_11"
+# path = "src/day_11/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_12"
+# path = "src/day_12/bin.rs"
+
+# [[bench]]
+# name = "day_12"
+# path = "src/day_12/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_13"
+# path = "src/day_13/bin.rs"
+
+# [[bench]]
+# name = "day_13"
+# path = "src/day_13/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_14"
+# path = "src/day_14/bin.rs"
+
+# [[bench]]
+# name = "day_14"
+# path = "src/day_14/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_15"
+# path = "src/day_15/bin.rs"
+
+# [[bench]]
+# name = "day_15"
+# path = "src/day_15/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_16"
+# path = "src/day_16/bin.rs"
+
+# [[bench]]
+# name = "day_16"
+# path = "src/day_16/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_17"
+# path = "src/day_17/bin.rs"
+
+# [[bench]]
+# name = "day_17"
+# path = "src/day_17/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_18"
+# path = "src/day_18/bin.rs"
+
+# [[bench]]
+# name = "day_18"
+# path = "src/day_18/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_19"
+# path = "src/day_19/bin.rs"
+
+# [[bench]]
+# name = "day_19"
+# path = "src/day_19/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_20"
+# path = "src/day_20/bin.rs"
+
+# [[bench]]
+# name = "day_20"
+# path = "src/day_20/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_21"
+# path = "src/day_21/bin.rs"
+
+# [[bench]]
+# name = "day_21"
+# path = "src/day_21/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_22"
+# path = "src/day_22/bin.rs"
+
+# [[bench]]
+# name = "day_22"
+# path = "src/day_22/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_23"
+# path = "src/day_23/bin.rs"
+
+# [[bench]]
+# name = "day_23"
+# path = "src/day_23/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_24"
+# path = "src/day_24/bin.rs"
+
+# [[bench]]
+# name = "day_24"
+# path = "src/day_24/bench.rs"
+# harness = false
+
+# [[bin]]
+# name = "day_25"
+# path = "src/day_25/bin.rs"
+
+# [[bench]]
+# name = "day_25"
+# path = "src/day_25/bench.rs"
+# harness = false
