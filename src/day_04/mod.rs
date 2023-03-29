@@ -6,11 +6,11 @@ pub fn parse_input(input: &str) -> Vec<(RangeInclusive<u32>, RangeInclusive<u32>
     input
         .lines()
         .map(|line| {
-            let parts: Vec<_> = line
-                .split([',', '-'])
-                .map(|s| s.parse::<u32>().unwrap())
-                .collect();
-            (parts[0]..=parts[1], parts[2]..=parts[3])
+            let mut parts = line.split([',', '-']).map(|s| s.parse::<u32>().unwrap());
+            (
+                parts.next().unwrap()..=parts.next().unwrap(),
+                parts.next().unwrap()..=parts.next().unwrap(),
+            )
         })
         .collect()
 }
