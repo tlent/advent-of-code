@@ -1,3 +1,5 @@
+pub const INPUT: &str = include_str!("./input.txt");
+
 pub fn parse_input(input: &str) -> Vec<u32> {
     input
         .split("\n\n")

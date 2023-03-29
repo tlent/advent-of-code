@@ -1,12 +1,6 @@
-const INPUT: &str = include_str!("../input.txt");
+pub const INPUT: &str = include_str!("./input.txt");
 
-fn main() {
-    let (part_one_rounds, part_two_rounds) = parse_input(INPUT);
-    println!("{}", part_one(&part_one_rounds));
-    println!("{}", part_two(&part_two_rounds));
-}
-
-fn parse_input(input: &str) -> (Vec<(Move, Move)>, Vec<(Move, Outcome)>) {
+pub fn parse_input(input: &str) -> (Vec<(Move, Move)>, Vec<(Move, Outcome)>) {
     input
         .lines()
         .map(|line| {
@@ -19,7 +13,7 @@ fn parse_input(input: &str) -> (Vec<(Move, Move)>, Vec<(Move, Outcome)>) {
         .unzip()
 }
 
-fn part_one(rounds: &[(Move, Move)]) -> u32 {
+pub fn part_one(rounds: &[(Move, Move)]) -> u32 {
     rounds
         .iter()
         .map(
@@ -38,7 +32,7 @@ fn part_one(rounds: &[(Move, Move)]) -> u32 {
         .sum()
 }
 
-fn part_two(rounds: &[(Move, Outcome)]) -> u32 {
+pub fn part_two(rounds: &[(Move, Outcome)]) -> u32 {
     rounds
         .iter()
         .map(|(opponent_move, outcome)| match (outcome, opponent_move) {
@@ -55,7 +49,7 @@ fn part_two(rounds: &[(Move, Outcome)]) -> u32 {
         .sum()
 }
 
-enum Outcome {
+pub enum Outcome {
     Lose,
     Draw,
     Win,
@@ -73,7 +67,7 @@ impl Outcome {
 }
 
 #[derive(Debug, Clone, Copy)]
-enum Move {
+pub enum Move {
     Rock,
     Paper,
     Scissors,

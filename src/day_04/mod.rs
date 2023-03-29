@@ -1,14 +1,8 @@
 use std::ops::RangeInclusive;
 
-const INPUT: &str = include_str!("../input.txt");
+pub const INPUT: &str = include_str!("./input.txt");
 
-fn main() {
-    let pairs = parse_input(INPUT);
-    println!("{}", part_one(&pairs));
-    println!("{}", part_two(&pairs));
-}
-
-fn parse_input(input: &str) -> Vec<(RangeInclusive<u32>, RangeInclusive<u32>)> {
+pub fn parse_input(input: &str) -> Vec<(RangeInclusive<u32>, RangeInclusive<u32>)> {
     input
         .lines()
         .map(|line| {
@@ -21,7 +15,7 @@ fn parse_input(input: &str) -> Vec<(RangeInclusive<u32>, RangeInclusive<u32>)> {
         .collect()
 }
 
-fn part_one(pairs: &[(RangeInclusive<u32>, RangeInclusive<u32>)]) -> usize {
+pub fn part_one(pairs: &[(RangeInclusive<u32>, RangeInclusive<u32>)]) -> usize {
     pairs
         .iter()
         .filter(|(a, b)| {
@@ -31,7 +25,7 @@ fn part_one(pairs: &[(RangeInclusive<u32>, RangeInclusive<u32>)]) -> usize {
         .count()
 }
 
-fn part_two(pairs: &[(RangeInclusive<u32>, RangeInclusive<u32>)]) -> usize {
+pub fn part_two(pairs: &[(RangeInclusive<u32>, RangeInclusive<u32>)]) -> usize {
     pairs
         .iter()
         .filter(|(a, b)| {

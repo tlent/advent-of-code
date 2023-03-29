@@ -1,12 +1,6 @@
-const INPUT: &str = include_str!("../input.txt");
+pub const INPUT: &str = include_str!("./input.txt");
 
-fn main() {
-    let lines: Vec<_> = INPUT.lines().collect();
-    println!("{}", part_one(&lines));
-    println!("{}", part_two(&lines));
-}
-
-fn part_one(lines: &[&str]) -> u32 {
+pub fn part_one(lines: &[&str]) -> u32 {
     lines
         .iter()
         .map(|line| {
@@ -17,7 +11,7 @@ fn part_one(lines: &[&str]) -> u32 {
         .sum::<u32>()
 }
 
-fn part_two(lines: &[&str]) -> u32 {
+pub fn part_two(lines: &[&str]) -> u32 {
     lines
         .chunks_exact(3)
         .map(|chunk_lines| {
