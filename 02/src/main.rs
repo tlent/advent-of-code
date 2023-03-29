@@ -1,6 +1,5 @@
 const INPUT: &str = include_str!("../input.txt");
 
-#[derive(Debug, Clone, Copy)]
 enum Outcome {
     Lose,
     Draw,
@@ -16,27 +15,8 @@ impl Outcome {
             _ => panic!("Invalid char"),
         }
     }
-
-    fn from_moves(own_move: Move, opponent_move: Move) -> Self {
-        if own_move == opponent_move {
-            Self::Draw
-        } else if own_move.wins_against() == opponent_move {
-            Self::Win
-        } else {
-            Self::Lose
-        }
-    }
-
-    fn score(&self) -> u32 {
-        match self {
-            Self::Lose => 0,
-            Self::Draw => 3,
-            Self::Win => 6,
-        }
-    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Move {
     Rock,
     Paper,
@@ -52,38 +32,6 @@ impl Move {
             _ => panic!("Invalid char"),
         }
     }
-
-    fn score(&self) -> u32 {
-        match self {
-            Self::Rock => 1,
-            Self::Paper => 2,
-            Self::Scissors => 3,
-        }
-    }
-
-    fn wins_against(&self) -> Self {
-        match self {
-            Self::Rock => Self::Scissors,
-            Self::Paper => Self::Rock,
-            Self::Scissors => Self::Paper,
-        }
-    }
-
-    fn loses_against(&self) -> Self {
-        match self {
-            Self::Rock => Self::Paper,
-            Self::Paper => Self::Scissors,
-            Self::Scissors => Self::Rock,
-        }
-    }
-
-    fn for_outcome(outcome: Outcome, opponent_move: Self) -> Self {
-        match outcome {
-            Outcome::Lose => opponent_move.wins_against(),
-            Outcome::Draw => opponent_move,
-            Outcome::Win => opponent_move.loses_against(),
-        }
-    }
 }
 
 fn main() {
@@ -92,8 +40,17 @@ fn main() {
         .map(|line| {
             let opponent_move = Move::from_char(line.chars().nth(0).unwrap());
             let own_move = Move::from_char(line.chars().nth(2).unwrap());
-            let outcome = Outcome::from_moves(own_move, opponent_move);
-            own_move.score() + outcome.score()
+            match (own_move, opponent_move) {
+                (Move::Rock, Move::Paper) => 1,
+                (Move::Paper, Move::Scissors) => 2,
+                (Move::Scissors, Move::Rock) => 3,
+                (Move::Rock, Move::Rock) => 4,
+                (Move::Paper, Move::Paper) => 5,
+                (Move::Scissors, Move::Scissors) => 6,
+                (Move::Rock, Move::Scissors) => 7,
+                (Move::Paper, Move::Rock) => 8,
+                (Move::Scissors, Move::Paper) => 9,
+            }
         })
         .sum();
     println!("{}", part_one_score);
@@ -102,8 +59,17 @@ fn main() {
         .map(|line| {
             let opponent_move = Move::from_char(line.chars().nth(0).unwrap());
             let outcome = Outcome::from_char(line.chars().nth(2).unwrap());
-            let own_move = Move::for_outcome(outcome, opponent_move);
-            own_move.score() + outcome.score()
+            match (outcome, opponent_move) {
+                (Outcome::Lose, Move::Paper) => 1,
+                (Outcome::Lose, Move::Scissors) => 2,
+                (Outcome::Lose, Move::Rock) => 3,
+                (Outcome::Draw, Move::Rock) => 4,
+                (Outcome::Draw, Move::Paper) => 5,
+                (Outcome::Draw, Move::Scissors) => 6,
+                (Outcome::Win, Move::Scissors) => 7,
+                (Outcome::Win, Move::Rock) => 8,
+                (Outcome::Win, Move::Paper) => 9,
+            }
         })
         .sum();
     println!("{}", part_two_score);
