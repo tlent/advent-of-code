@@ -83,3 +83,20 @@ impl Move {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_part_one() {
+        let (rounds, _) = parse_input(INPUT);
+        assert_eq!(part_one(&rounds), 14531);
+    }
+
+    #[test]
+    fn test_part_two() {
+        let (_, rounds) = parse_input(INPUT);
+        assert_eq!(part_two(&rounds), 11258);
+    }
+}

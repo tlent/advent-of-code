@@ -37,3 +37,20 @@ fn priority(byte: u8) -> u32 {
         _ => panic!("Invalid byte"),
     }) as u32
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_part_one() {
+        let lines: Vec<_> = INPUT.lines().collect();
+        assert_eq!(part_one(&lines), 8515);
+    }
+
+    #[test]
+    fn test_part_two() {
+        let lines: Vec<_> = INPUT.lines().collect();
+        assert_eq!(part_two(&lines), 2434);
+    }
+}

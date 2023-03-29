@@ -36,3 +36,20 @@ pub fn part_two(pairs: &[(RangeInclusive<u32>, RangeInclusive<u32>)]) -> usize {
         })
         .count()
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_part_one() {
+        let pairs = parse_input(INPUT);
+        assert_eq!(part_one(&pairs), 441);
+    }
+
+    #[test]
+    fn test_part_two() {
+        let pairs = parse_input(INPUT);
+        assert_eq!(part_two(&pairs), 861);
+    }
+}
