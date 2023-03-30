@@ -1,19 +1,22 @@
 pub const INPUT: &str = include_str!("./input.txt");
 
-pub fn parse_input(input: &str) -> (Vec<(Move, Move)>, Vec<(Move, Outcome)>) {
+type PartOneRound = (Move, Move);
+type PartTwoRound = (Move, Outcome);
+
+pub fn parse_input(input: &str) -> (Vec<PartOneRound>, Vec<PartTwoRound>) {
     input
         .lines()
         .map(|line| {
-            let opponent_move = Move::from_byte(line.bytes().nth(0).unwrap());
-            let second_byte = line.bytes().nth(2).unwrap();
-            let own_move = Move::from_byte(second_byte);
-            let outcome = Outcome::from_byte(second_byte);
+            let bytes = line.as_bytes();
+            let opponent_move = Move::from_byte(bytes[0]);
+            let own_move = Move::from_byte(bytes[2]);
+            let outcome = Outcome::from_byte(bytes[2]);
             ((opponent_move, own_move), (opponent_move, outcome))
         })
         .unzip()
 }
 
-pub fn part_one(rounds: &[(Move, Move)]) -> u32 {
+pub fn part_one(rounds: &[PartOneRound]) -> u32 {
     rounds
         .iter()
         .map(
@@ -32,7 +35,7 @@ pub fn part_one(rounds: &[(Move, Move)]) -> u32 {
         .sum()
 }
 
-pub fn part_two(rounds: &[(Move, Outcome)]) -> u32 {
+pub fn part_two(rounds: &[PartTwoRound]) -> u32 {
     rounds
         .iter()
         .map(|(opponent_move, outcome)| match (outcome, opponent_move) {

@@ -22,20 +22,17 @@ pub fn part_two(lines: &[&str]) -> u32 {
 }
 
 fn find_common_byte(strs: &[&str]) -> Option<u8> {
-    for byte in strs[0].bytes() {
-        if strs[1..].iter().all(|str| str.bytes().any(|b| b == byte)) {
-            return Some(byte);
-        }
-    }
-    None
+    strs[0]
+        .bytes()
+        .find(|&byte| strs[1..].iter().all(|str| str.bytes().any(|b| b == byte)))
 }
 
 fn priority(byte: u8) -> u32 {
-    (match byte {
+    u32::from(match byte {
         b'a'..=b'z' => 1 + byte - b'a',
         b'A'..=b'Z' => 27 + byte - b'A',
         _ => panic!("Invalid byte"),
-    }) as u32
+    })
 }
 
 #[cfg(test)]
