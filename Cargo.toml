@@ -13,6 +13,7 @@ criterion = "0.4"
 [[bin]]
 name = "day_01"
 path = "src/day_01/bin.rs"
+test = false
 
 [[bench]]
 name = "day_01"
@@ -22,6 +23,7 @@ harness = false
 [[bin]]
 name = "day_02"
 path = "src/day_02/bin.rs"
+test = false
 
 [[bench]]
 name = "day_02"
@@ -31,6 +33,7 @@ harness = false
 [[bin]]
 name = "day_03"
 path = "src/day_03/bin.rs"
+test = false
 
 [[bench]]
 name = "day_03"
@@ -40,6 +43,7 @@ harness = false
 [[bin]]
 name = "day_04"
 path = "src/day_04/bin.rs"
+test = false
 
 [[bench]]
 name = "day_04"
@@ -49,6 +53,7 @@ harness = false
 [[bin]]
 name = "day_05"
 path = "src/day_05/bin.rs"
+test = false
 
 [[bench]]
 name = "day_05"
@@ -58,6 +63,7 @@ harness = false
 [[bin]]
 name = "day_06"
 path = "src/day_06/bin.rs"
+test = false
 
 [[bench]]
 name = "day_06"
@@ -67,6 +73,7 @@ harness = false
 # [[bin]]
 # name = "day_07"
 # path = "src/day_07/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_07"
@@ -76,6 +83,7 @@ harness = false
 # [[bin]]
 # name = "day_08"
 # path = "src/day_08/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_08"
@@ -85,6 +93,7 @@ harness = false
 # [[bin]]
 # name = "day_09"
 # path = "src/day_09/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_09"
@@ -94,6 +103,7 @@ harness = false
 # [[bin]]
 # name = "day_10"
 # path = "src/day_10/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_10"
@@ -103,6 +113,7 @@ harness = false
 # [[bin]]
 # name = "day_11"
 # path = "src/day_11/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_11"
@@ -112,6 +123,7 @@ harness = false
 # [[bin]]
 # name = "day_12"
 # path = "src/day_12/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_12"
@@ -121,6 +133,7 @@ harness = false
 # [[bin]]
 # name = "day_13"
 # path = "src/day_13/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_13"
@@ -130,6 +143,7 @@ harness = false
 # [[bin]]
 # name = "day_14"
 # path = "src/day_14/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_14"
@@ -139,6 +153,7 @@ harness = false
 # [[bin]]
 # name = "day_15"
 # path = "src/day_15/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_15"
@@ -148,6 +163,7 @@ harness = false
 # [[bin]]
 # name = "day_16"
 # path = "src/day_16/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_16"
@@ -157,6 +173,7 @@ harness = false
 # [[bin]]
 # name = "day_17"
 # path = "src/day_17/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_17"
@@ -166,6 +183,7 @@ harness = false
 # [[bin]]
 # name = "day_18"
 # path = "src/day_18/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_18"
@@ -175,6 +193,7 @@ harness = false
 # [[bin]]
 # name = "day_19"
 # path = "src/day_19/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_19"
@@ -184,6 +203,7 @@ harness = false
 # [[bin]]
 # name = "day_20"
 # path = "src/day_20/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_20"
@@ -193,6 +213,7 @@ harness = false
 # [[bin]]
 # name = "day_21"
 # path = "src/day_21/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_21"
@@ -202,6 +223,7 @@ harness = false
 # [[bin]]
 # name = "day_22"
 # path = "src/day_22/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_22"
@@ -211,6 +233,7 @@ harness = false
 # [[bin]]
 # name = "day_23"
 # path = "src/day_23/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_23"
@@ -220,6 +243,7 @@ harness = false
 # [[bin]]
 # name = "day_24"
 # path = "src/day_24/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_24"
@@ -229,6 +253,7 @@ harness = false
 # [[bin]]
 # name = "day_25"
 # path = "src/day_25/bin.rs"
+# test = false
 
 # [[bench]]
 # name = "day_25"
