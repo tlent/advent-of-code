@@ -50,11 +50,7 @@ pub fn part_one(mut stacks: Vec<Vec<u8>>, moves: &[Move]) -> String {
             stacks[destination_index].push(byte);
         }
     }
-    let last_bytes: Vec<_> = stacks
-        .iter()
-        .filter_map(|stack| stack.last().copied())
-        .collect();
-    unsafe { String::from_utf8_unchecked(last_bytes) }
+    get_top_of_stacks(&stacks)
 }
 
 pub fn part_two(mut stacks: Vec<Vec<u8>>, moves: &[Move]) -> String {
@@ -68,11 +64,22 @@ pub fn part_two(mut stacks: Vec<Vec<u8>>, moves: &[Move]) -> String {
         let source_len = source.len();
         destination.extend(source.drain(source_len - count..));
     }
-    let last_bytes: Vec<_> = stacks
+    get_top_of_stacks(&stacks)
+}
+
+fn get_top_of_stacks(stacks: &[Vec<u8>]) -> String {
+    let tops = stacks
         .iter()
         .filter_map(|stack| stack.last().copied())
         .collect();
-    unsafe { String::from_utf8_unchecked(last_bytes) }
+    unsafe { String::from_utf8_unchecked(tops) }
+}
+
+#[derive(Debug)]
+pub struct Move {
+    pub count: usize,
+    pub source_index: usize,
+    pub destination_index: usize,
 }
 
 trait SliceExt {
@@ -103,13 +110,6 @@ impl<T> SliceExt for [T] {
             }
         }
     }
-}
-
-#[derive(Debug)]
-pub struct Move {
-    pub count: usize,
-    pub source_index: usize,
-    pub destination_index: usize,
 }
 
 #[cfg(test)]
