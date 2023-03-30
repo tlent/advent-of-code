@@ -57,8 +57,8 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        let (sizes, _) = parse_input(INPUT);
-        assert_eq!(part_one(&sizes), 1743217);
+        let (directory_sizes, _) = parse_input(INPUT);
+        assert_eq!(part_one(&directory_sizes), 1743217);
     }
 
     #[test]
