@@ -24,7 +24,7 @@ pub fn part_two(lines: &[&str]) -> u32 {
 fn find_common_byte(strs: &[&str]) -> Option<u8> {
     strs[0]
         .bytes()
-        .find(|&byte| strs[1..].iter().all(|str| str.bytes().any(|b| b == byte)))
+        .find(|&byte| strs[1..].iter().all(|str| str.as_bytes().contains(&byte)))
 }
 
 fn priority(byte: u8) -> u32 {
