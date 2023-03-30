@@ -3,6 +3,41 @@ pub const INPUT: &str = include_str!("input.txt");
 type PartOneRound = (Move, Move);
 type PartTwoRound = (Move, Outcome);
 
+pub enum Outcome {
+    Lose,
+    Draw,
+    Win,
+}
+
+impl Outcome {
+    fn from_byte(byte: u8) -> Self {
+        match byte {
+            b'X' => Self::Lose,
+            b'Y' => Self::Draw,
+            b'Z' => Self::Win,
+            _ => panic!("Invalid byte"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Move {
+    Rock,
+    Paper,
+    Scissors,
+}
+
+impl Move {
+    fn from_byte(byte: u8) -> Self {
+        match byte {
+            b'A' | b'X' => Self::Rock,
+            b'B' | b'Y' => Self::Paper,
+            b'C' | b'Z' => Self::Scissors,
+            _ => panic!("Invalid byte"),
+        }
+    }
+}
+
 pub fn parse_input(input: &str) -> (Vec<PartOneRound>, Vec<PartTwoRound>) {
     input
         .lines()
@@ -50,41 +85,6 @@ pub fn part_two(rounds: &[PartTwoRound]) -> u32 {
             (Outcome::Win, Move::Paper) => 9,
         })
         .sum()
-}
-
-pub enum Outcome {
-    Lose,
-    Draw,
-    Win,
-}
-
-impl Outcome {
-    fn from_byte(byte: u8) -> Self {
-        match byte {
-            b'X' => Self::Lose,
-            b'Y' => Self::Draw,
-            b'Z' => Self::Win,
-            _ => panic!("Invalid byte"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum Move {
-    Rock,
-    Paper,
-    Scissors,
-}
-
-impl Move {
-    fn from_byte(byte: u8) -> Self {
-        match byte {
-            b'A' | b'X' => Self::Rock,
-            b'B' | b'Y' => Self::Paper,
-            b'C' | b'Z' => Self::Scissors,
-            _ => panic!("Invalid byte"),
-        }
-    }
 }
 
 #[cfg(test)]

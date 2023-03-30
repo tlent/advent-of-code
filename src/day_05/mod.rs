@@ -2,6 +2,13 @@ use std::cmp::Ordering;
 
 pub const INPUT: &str = include_str!("input.txt");
 
+#[derive(Debug)]
+pub struct Move {
+    pub count: usize,
+    pub source_index: usize,
+    pub destination_index: usize,
+}
+
 pub fn parse_input(input: &str) -> (Vec<Vec<u8>>, Vec<Move>) {
     let (stacks_str, moves_str) = input.split_once("\n\n").unwrap();
     let stack_lines: Vec<_> = stacks_str
@@ -73,13 +80,6 @@ fn get_top_of_stacks(stacks: &[Vec<u8>]) -> String {
         .filter_map(|stack| stack.last().copied())
         .collect();
     unsafe { String::from_utf8_unchecked(tops) }
-}
-
-#[derive(Debug)]
-pub struct Move {
-    pub count: usize,
-    pub source_index: usize,
-    pub destination_index: usize,
 }
 
 trait SliceExt {
