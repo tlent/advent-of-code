@@ -22,9 +22,37 @@ pub fn part_two(lines: &[&str]) -> u32 {
 }
 
 fn find_common_byte(strs: &[&str]) -> Option<u8> {
-    strs[0]
-        .bytes()
-        .find(|&byte| strs[1..].iter().all(|str| str.as_bytes().contains(&byte)))
+    fn to_index(byte: u8) -> usize {
+        usize::from(match byte {
+            b'a'..=b'z' => byte - b'a',
+            b'A'..=b'Z' => 26 + byte - b'A',
+            _ => panic!("Invalid byte"),
+        })
+    }
+
+    fn to_byte(index: usize) -> u8 {
+        match index {
+            0..=25 => b'a' + index as u8,
+            26..=51 => b'A' + (index - 26) as u8,
+            _ => panic!("Invalid index"),
+        }
+    }
+
+    let mut common_bytes = [true; 52];
+    for str in strs {
+        let mut bytes = [false; 52];
+        for byte in str.bytes() {
+            bytes[to_index(byte)] = true;
+        }
+        for (common, byte) in common_bytes.iter_mut().zip(bytes.iter()) {
+            *common &= *byte;
+        }
+    }
+    common_bytes
+        .into_iter()
+        .enumerate()
+        .find(|&(_, common)| common)
+        .map(|(index, _)| to_byte(index))
 }
 
 fn priority(byte: u8) -> u32 {
