@@ -9,21 +9,39 @@ pub fn part_two(input: &str) -> usize {
 }
 
 fn find_unique_window_index(bytes: &[u8], window_size: usize) -> Option<usize> {
-    let mut previous_index_by_letter = [None; 26];
-    let mut previous_index = vec![None; bytes.len()];
-    for index in 0..bytes.len() {
-        if index >= window_size {
-            let window_start = index - window_size;
-            let window = &previous_index[window_start..index];
-            if window.iter().all(|&i| i < Some(window_start)) {
-                return Some(index);
-            }
+    let mut byte_counts = [0; 26];
+    let mut duplicate_count = 0;
+
+    for &byte in &bytes[..window_size] {
+        let byte_count = &mut byte_counts[to_index(byte)];
+        *byte_count += 1;
+        if *byte_count == 2 {
+            duplicate_count += 1;
         }
-        let index_by_letter = &mut previous_index_by_letter[bytes[index] as usize - b'a' as usize];
-        previous_index[index] = *index_by_letter;
-        *index_by_letter = Some(index);
+    }
+
+    for index in window_size..bytes.len() {
+        let removed_byte = bytes[index - window_size];
+        let removed_byte_count = &mut byte_counts[to_index(removed_byte)];
+        *removed_byte_count -= 1;
+        if *removed_byte_count == 1 {
+            duplicate_count -= 1;
+        }
+        let added_byte = bytes[index];
+        let added_byte_count = &mut byte_counts[to_index(added_byte)];
+        *added_byte_count += 1;
+        if *added_byte_count == 2 {
+            duplicate_count += 1;
+        }
+        if duplicate_count == 0 {
+            return Some(index + 1);
+        }
     }
     None
+}
+
+fn to_index(byte: u8) -> usize {
+    (byte - b'a') as usize
 }
 
 #[cfg(test)]
