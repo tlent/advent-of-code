@@ -1,6 +1,6 @@
 use std::ops::RangeInclusive;
 
-pub const INPUT: &str = include_str!("./input.txt");
+pub const INPUT: &str = include_str!("input.txt");
 
 pub fn parse_input(input: &str) -> Vec<(RangeInclusive<u32>, RangeInclusive<u32>)> {
     input

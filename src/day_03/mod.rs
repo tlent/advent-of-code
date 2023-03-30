@@ -1,4 +1,4 @@
-pub const INPUT: &str = include_str!("./input.txt");
+pub const INPUT: &str = include_str!("input.txt");
 
 pub type Set = [bool; 52];
 

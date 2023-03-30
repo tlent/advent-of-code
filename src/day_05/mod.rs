@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-pub const INPUT: &str = include_str!("./input.txt");
+pub const INPUT: &str = include_str!("input.txt");
 
 pub fn parse_input(input: &str) -> (Vec<Vec<u8>>, Vec<Move>) {
     let (stacks_str, moves_str) = input.split_once("\n\n").unwrap();
