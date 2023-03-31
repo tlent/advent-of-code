@@ -38,11 +38,10 @@ pub fn part_two(motions: &[Motion]) -> usize {
     count_tail_positions(motions, 10)
 }
 
-pub fn count_tail_positions(motions: &[Motion], knot_count: usize) -> usize {
+fn count_tail_positions(motions: &[Motion], knot_count: usize) -> usize {
     let mut current_positions = vec![(0i32, 0i32); knot_count];
     let mut tail_positions = HashSet::default();
-    for &motion in motions {
-        let (direction, steps) = motion;
+    for &(direction, steps) in motions {
         for _ in 0..steps {
             let head_position = &mut current_positions[0];
             match direction {
@@ -51,7 +50,7 @@ pub fn count_tail_positions(motions: &[Motion], knot_count: usize) -> usize {
                 Direction::Up => head_position.1 += 1,
                 Direction::Down => head_position.1 -= 1,
             }
-            let mut leader = current_positions[0];
+            let mut leader = *head_position;
             for follower in &mut current_positions[1..] {
                 let adjacent =
                     leader.0.abs_diff(follower.0) <= 1 && leader.1.abs_diff(follower.1) <= 1;
@@ -69,7 +68,7 @@ pub fn count_tail_positions(motions: &[Motion], knot_count: usize) -> usize {
                 }
                 leader = *follower;
             }
-            tail_positions.insert(*current_positions.last().unwrap());
+            tail_positions.insert(current_positions[knot_count - 1]);
         }
     }
     tail_positions.len()
