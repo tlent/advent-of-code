@@ -102,15 +102,15 @@ name = "day_09"
 path = "src/day_09/bench.rs"
 harness = false
 
-# [[bin]]
-# name = "day_10"
-# path = "src/day_10/bin.rs"
-# test = false
+[[bin]]
+name = "day_10"
+path = "src/day_10/bin.rs"
+test = false
 
-# [[bench]]
-# name = "day_10"
-# path = "src/day_10/bench.rs"
-# harness = false
+[[bench]]
+name = "day_10"
+path = "src/day_10/bench.rs"
+harness = false
 
 # [[bin]]
 # name = "day_11"
