@@ -99,7 +99,7 @@ pub fn part_two(grid: &Grid) -> usize {
                             None
                         }
                     })
-                    .unwrap_or_else(|| grid.size - x - 1);
+                    .unwrap_or(grid.size - x - 1);
                 let up_count = (0..y)
                     .rev()
                     .enumerate()
@@ -120,7 +120,7 @@ pub fn part_two(grid: &Grid) -> usize {
                             None
                         }
                     })
-                    .unwrap_or_else(|| grid.size - y - 1);
+                    .unwrap_or(grid.size - y - 1);
 
                 left_count * right_count * up_count * down_count
             })
