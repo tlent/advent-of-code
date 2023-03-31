@@ -69,42 +69,54 @@ pub fn part_one(grid: &Grid) -> usize {
     visible_count
 }
 
-pub fn part_two(grid: &Grid) -> u32 {
+pub fn part_two(grid: &Grid) -> usize {
     let mut max_score = 0;
 
-    for (y, row) in grid.rows().enumerate() {
-        for (x, &digit) in row.iter().enumerate() {
-            let mut left_count = 0;
-            for x in (0..x).rev() {
-                left_count += 1;
-                if grid.get(x, y) >= digit {
-                    break;
-                }
-            }
-
-            let mut right_count = 0;
-            for x in x + 1..grid.size {
-                right_count += 1;
-                if grid.get(x, y) >= digit {
-                    break;
-                }
-            }
-
-            let mut up_count = 0;
-            for y in (0..y).rev() {
-                up_count += 1;
-                if grid.get(x, y) >= digit {
-                    break;
-                }
-            }
-
-            let mut down_count = 0;
-            for y in y + 1..grid.size {
-                down_count += 1;
-                if grid.get(x, y) >= digit {
-                    break;
-                }
-            }
+    for y in 0..grid.size {
+        for x in 0..grid.size {
+            let digit = grid.get(x, y);
+            let left_count = (0..x)
+                .rev()
+                .enumerate()
+                .find_map(|(i, closure_x)| {
+                    if grid.get(closure_x, y) >= digit {
+                        Some(i + 1)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or(x);
+            let right_count = (x + 1..grid.size)
+                .enumerate()
+                .find_map(|(i, closure_x)| {
+                    if grid.get(closure_x, y) >= digit {
+                        Some(i + 1)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_else(|| grid.size - x - 1);
+            let up_count = (0..y)
+                .rev()
+                .enumerate()
+                .find_map(|(i, closure_y)| {
+                    if grid.get(x, closure_y) >= digit {
+                        Some(i + 1)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or(y);
+            let down_count = (y + 1..grid.size)
+                .enumerate()
+                .find_map(|(i, closure_y)| {
+                    if grid.get(x, closure_y) >= digit {
+                        Some(i + 1)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_else(|| grid.size - y - 1);
 
             let score = left_count * right_count * up_count * down_count;
             max_score = cmp::max(max_score, score);
