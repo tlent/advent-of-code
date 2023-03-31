@@ -1,122 +1,107 @@
+use std::cmp;
+
 pub const INPUT: &str = include_str!("input.txt");
 
 pub struct Grid {
     size: usize,
-    row_data: Vec<u8>,
-    column_data: Vec<u8>,
+    data: Vec<u8>,
 }
 
 impl Grid {
-    pub fn from_input(input: &str) -> Self {
-        let size = input.find('\n').unwrap();
-        let row_data: Vec<_> = input
-            .bytes()
-            .filter_map(|byte| {
-                if byte.is_ascii_digit() {
-                    Some(byte - b'0')
-                } else {
-                    None
-                }
-            })
-            .collect();
-        let column_data: Vec<_> = (0..size)
-            .flat_map(|column| row_data.iter().skip(column).step_by(size).copied())
-            .collect();
-        Self {
-            size,
-            row_data,
-            column_data,
-        }
-    }
-
-    pub fn rows(&self) -> impl Iterator<Item = &[u8]> {
-        self.row_data.chunks_exact(self.size)
-    }
-
-    pub fn columns(&self) -> impl Iterator<Item = &[u8]> {
-        self.column_data.chunks_exact(self.size)
+    pub fn rows(&self) -> impl Iterator<Item = &[u8]> + ExactSizeIterator + DoubleEndedIterator {
+        self.data.chunks_exact(self.size)
     }
 }
 
 pub fn parse_input(input: &str) -> Grid {
-    Grid::from_input(input)
+    let size = input.find('\n').unwrap();
+    let data: Vec<_> = input
+        .bytes()
+        .filter_map(|byte| {
+            if byte.is_ascii_digit() {
+                Some(byte - b'0')
+            } else {
+                None
+            }
+        })
+        .collect();
+    Grid { size, data }
 }
 
 pub fn part_one(grid: &Grid) -> usize {
     let mut visible = vec![false; grid.size * grid.size];
+    let mut visible_count = 0;
+
+    let mut max_up: Vec<Option<u8>> = vec![None; grid.size];
     for (y, row) in grid.rows().enumerate() {
-        let mut max: Option<u8> = None;
+        let mut max_left = None;
         for (x, &digit) in row.iter().enumerate() {
-            if Some(digit) > max {
-                visible[y * grid.size + x] = true;
-                max = Some(digit);
+            let index = y * grid.size + x;
+            if Some(digit) > max_left || Some(digit) > max_up[x] {
+                visible_count += 1;
+                visible[index] = true;
+                max_left = cmp::max(max_left, Some(digit));
+                max_up[x] = cmp::max(max_up[x], Some(digit));
             }
         }
-        max = None;
+    }
+
+    let mut max_down: Vec<Option<u8>> = vec![None; grid.size];
+    for (y, row) in grid.rows().enumerate().rev() {
+        let mut max_right = None;
         for (x, &digit) in row.iter().enumerate().rev() {
-            if Some(digit) > max {
-                visible[y * grid.size + x] = true;
-                max = Some(digit);
+            let index = y * grid.size + x;
+            if Some(digit) > max_right || Some(digit) > max_down[x] {
+                if !visible[index] {
+                    visible_count += 1;
+                    visible[index] = true;
+                }
+                max_right = cmp::max(max_right, Some(digit));
+                max_down[x] = cmp::max(max_down[x], Some(digit));
             }
         }
     }
-    for (x, column) in grid.columns().enumerate() {
-        let mut max: Option<u8> = None;
-        for (y, &digit) in column.iter().enumerate() {
-            if Some(digit) > max {
-                visible[y * grid.size + x] = true;
-                max = Some(digit);
-            }
-        }
-        max = None;
-        for (y, &digit) in column.iter().enumerate().rev() {
-            if Some(digit) > max {
-                visible[y * grid.size + x] = true;
-                max = Some(digit);
-            }
-        }
-    }
-    visible.into_iter().filter(|&is_visible| is_visible).count()
+
+    visible_count
 }
 
 pub fn part_two(grid: &Grid) -> u32 {
     let mut scores = vec![1; grid.size * grid.size];
+
+    let mut counts_up: Vec<[u32; 10]> = vec![[0; 10]; grid.size];
     for (y, row) in grid.rows().enumerate() {
-        let mut counts = vec![0; 10];
+        let mut counts_left = [0; 10];
         for (x, &digit) in row.iter().enumerate() {
-            scores[y * grid.size + x] *= counts[digit as usize];
-            counts[..=digit as usize].fill(1);
-            for count in &mut counts[(digit as usize + 1)..] {
-                *count += 1;
+            let index = y * grid.size + x;
+            let digit_usize = digit as usize;
+            scores[index] *= counts_left[digit_usize];
+            scores[index] *= counts_up[x][digit_usize];
+            for counts in [&mut counts_left, &mut counts_up[x]].iter_mut() {
+                counts[..=digit_usize].fill(1);
+                for count in &mut counts[(digit_usize + 1)..] {
+                    *count += 1;
+                }
             }
         }
-        counts.fill(0);
+    }
+
+    let mut counts_down: Vec<[u32; 10]> = vec![[0; 10]; grid.size];
+    for (y, row) in grid.rows().enumerate().rev() {
+        let mut counts_right = [0; 10];
         for (x, &digit) in row.iter().enumerate().rev() {
-            scores[y * grid.size + x] *= counts[digit as usize];
-            counts[..=digit as usize].fill(1);
-            for count in &mut counts[(digit as usize + 1)..] {
-                *count += 1;
+            let index = y * grid.size + x;
+            let digit_usize = digit as usize;
+            scores[index] *= counts_right[digit_usize];
+            scores[index] *= counts_down[x][digit_usize];
+            for counts in [&mut counts_right, &mut counts_down[x]].iter_mut() {
+                counts[..=digit_usize].fill(1);
+                for count in &mut counts[(digit_usize + 1)..] {
+                    *count += 1;
+                }
             }
         }
     }
-    for (x, column) in grid.columns().enumerate() {
-        let mut counts = vec![0; 10];
-        for (y, &digit) in column.iter().enumerate() {
-            scores[y * grid.size + x] *= counts[digit as usize];
-            counts[..=digit as usize].fill(1);
-            for count in &mut counts[(digit as usize + 1)..] {
-                *count += 1;
-            }
-        }
-        counts.fill(0);
-        for (y, &digit) in column.iter().enumerate().rev() {
-            scores[y * grid.size + x] *= counts[digit as usize];
-            counts[..=digit as usize].fill(1);
-            for count in &mut counts[(digit as usize + 1)..] {
-                *count += 1;
-            }
-        }
-    }
+
     *scores.iter().max().unwrap()
 }
 
