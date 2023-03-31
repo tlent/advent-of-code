@@ -7,33 +7,23 @@ pub fn parse_input(input: &str) -> Vec<u32> {
         .collect()
 }
 
-pub fn part_one(sorted_group_sums: &[u32]) -> u32 {
-    *sorted_group_sums.last().unwrap()
-}
-
-pub fn part_two(sorted_group_sums: &[u32]) -> u32 {
-    sorted_group_sums.iter().rev().take(3).sum::<u32>()
+pub fn solve(mut group_sums: Vec<u32>) -> (u32, u32) {
+    group_sums.sort_unstable();
+    (
+        *group_sums.last().unwrap(),
+        group_sums.iter().rev().take(3).sum::<u32>(),
+    )
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
 
-    fn get_test_input() -> Vec<u32> {
-        let mut group_sums = parse_input(INPUT);
-        group_sums.sort_unstable();
-        group_sums
-    }
-
     #[test]
     fn test_part_one() {
-        let input = get_test_input();
-        assert_eq!(part_one(&input), 70509);
-    }
-
-    #[test]
-    fn test_part_two() {
-        let input = get_test_input();
-        assert_eq!(part_two(&input), 208567);
+        let group_sums = parse_input(INPUT);
+        let (part_one, part_two) = solve(group_sums);
+        assert_eq!(part_one, 70509);
+        assert_eq!(part_two, 208567);
     }
 }
