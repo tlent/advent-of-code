@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::cmp;
 
 pub const INPUT: &str = include_str!("input.txt");
@@ -10,6 +11,10 @@ pub struct Grid {
 impl Grid {
     pub fn rows(&self) -> impl Iterator<Item = &[u8]> + ExactSizeIterator + DoubleEndedIterator {
         self.data.chunks_exact(self.size)
+    }
+
+    pub fn par_rows(&self) -> impl ParallelIterator<Item = &[u8]> + IndexedParallelIterator {
+        self.data.par_chunks_exact(self.size)
     }
 
     pub fn get(&self, x: usize, y: usize) -> u8 {
@@ -70,60 +75,58 @@ pub fn part_one(grid: &Grid) -> usize {
 }
 
 pub fn part_two(grid: &Grid) -> usize {
-    let mut max_score = 0;
+    grid.par_rows()
+        .enumerate()
+        .flat_map_iter(|(y, row)| {
+            row.iter().enumerate().map(move |(x, &digit)| {
+                let left_count = (0..x)
+                    .rev()
+                    .enumerate()
+                    .find_map(|(i, closure_x)| {
+                        if grid.get(closure_x, y) >= digit {
+                            Some(i + 1)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or(x);
+                let right_count = (x + 1..grid.size)
+                    .enumerate()
+                    .find_map(|(i, closure_x)| {
+                        if grid.get(closure_x, y) >= digit {
+                            Some(i + 1)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or_else(|| grid.size - x - 1);
+                let up_count = (0..y)
+                    .rev()
+                    .enumerate()
+                    .find_map(|(i, closure_y)| {
+                        if grid.get(x, closure_y) >= digit {
+                            Some(i + 1)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or(y);
+                let down_count = (y + 1..grid.size)
+                    .enumerate()
+                    .find_map(|(i, closure_y)| {
+                        if grid.get(x, closure_y) >= digit {
+                            Some(i + 1)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or_else(|| grid.size - y - 1);
 
-    for y in 0..grid.size {
-        for x in 0..grid.size {
-            let digit = grid.get(x, y);
-            let left_count = (0..x)
-                .rev()
-                .enumerate()
-                .find_map(|(i, closure_x)| {
-                    if grid.get(closure_x, y) >= digit {
-                        Some(i + 1)
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or(x);
-            let right_count = (x + 1..grid.size)
-                .enumerate()
-                .find_map(|(i, closure_x)| {
-                    if grid.get(closure_x, y) >= digit {
-                        Some(i + 1)
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or_else(|| grid.size - x - 1);
-            let up_count = (0..y)
-                .rev()
-                .enumerate()
-                .find_map(|(i, closure_y)| {
-                    if grid.get(x, closure_y) >= digit {
-                        Some(i + 1)
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or(y);
-            let down_count = (y + 1..grid.size)
-                .enumerate()
-                .find_map(|(i, closure_y)| {
-                    if grid.get(x, closure_y) >= digit {
-                        Some(i + 1)
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or_else(|| grid.size - y - 1);
-
-            let score = left_count * right_count * up_count * down_count;
-            max_score = cmp::max(max_score, score);
-        }
-    }
-
-    max_score
+                left_count * right_count * up_count * down_count
+            })
+        })
+        .max()
+        .unwrap()
 }
 
 #[cfg(test)]
