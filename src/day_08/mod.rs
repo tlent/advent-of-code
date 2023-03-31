@@ -77,7 +77,7 @@ pub fn part_two(grid: &Grid) -> u32 {
             let mut left_count = 0;
             for x in (0..x).rev() {
                 left_count += 1;
-                if grid.get(x, y) >= Some(digit) {
+                if grid.get(x, y).unwrap() >= digit {
                     break;
                 }
             }
@@ -85,7 +85,7 @@ pub fn part_two(grid: &Grid) -> u32 {
             let mut right_count = 0;
             for x in x + 1..grid.size {
                 right_count += 1;
-                if grid.get(x, y) >= Some(digit) {
+                if grid.get(x, y).unwrap() >= digit {
                     break;
                 }
             }
@@ -93,7 +93,7 @@ pub fn part_two(grid: &Grid) -> u32 {
             let mut up_count = 0;
             for y in (0..y).rev() {
                 up_count += 1;
-                if grid.get(x, y) >= Some(digit) {
+                if grid.get(x, y).unwrap() >= digit {
                     break;
                 }
             }
@@ -101,7 +101,7 @@ pub fn part_two(grid: &Grid) -> u32 {
             let mut down_count = 0;
             for y in y + 1..grid.size {
                 down_count += 1;
-                if grid.get(x, y) >= Some(digit) {
+                if grid.get(x, y).unwrap() >= digit {
                     break;
                 }
             }
