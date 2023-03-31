@@ -82,8 +82,8 @@ pub fn part_two(grid: &Grid) -> usize {
                 let left_count = (0..x)
                     .rev()
                     .enumerate()
-                    .find_map(|(i, closure_x)| {
-                        if grid.get(closure_x, y) >= digit {
+                    .find_map(|(i, left_x)| {
+                        if grid.get(left_x, y) >= digit {
                             Some(i + 1)
                         } else {
                             None
@@ -92,8 +92,8 @@ pub fn part_two(grid: &Grid) -> usize {
                     .unwrap_or(x);
                 let right_count = (x + 1..grid.size)
                     .enumerate()
-                    .find_map(|(i, closure_x)| {
-                        if grid.get(closure_x, y) >= digit {
+                    .find_map(|(i, right_x)| {
+                        if grid.get(right_x, y) >= digit {
                             Some(i + 1)
                         } else {
                             None
@@ -103,8 +103,8 @@ pub fn part_two(grid: &Grid) -> usize {
                 let up_count = (0..y)
                     .rev()
                     .enumerate()
-                    .find_map(|(i, closure_y)| {
-                        if grid.get(x, closure_y) >= digit {
+                    .find_map(|(i, up_y)| {
+                        if grid.get(x, up_y) >= digit {
                             Some(i + 1)
                         } else {
                             None
@@ -113,8 +113,8 @@ pub fn part_two(grid: &Grid) -> usize {
                     .unwrap_or(y);
                 let down_count = (y + 1..grid.size)
                     .enumerate()
-                    .find_map(|(i, closure_y)| {
-                        if grid.get(x, closure_y) >= digit {
+                    .find_map(|(i, down_y)| {
+                        if grid.get(x, down_y) >= digit {
                             Some(i + 1)
                         } else {
                             None
