@@ -11,6 +11,10 @@ impl Grid {
     pub fn rows(&self) -> impl Iterator<Item = &[u8]> + ExactSizeIterator + DoubleEndedIterator {
         self.data.chunks_exact(self.size)
     }
+
+    pub fn get(&self, x: usize, y: usize) -> Option<u8> {
+        self.data.get(y * self.size + x).copied()
+    }
 }
 
 pub fn parse_input(input: &str) -> Grid {
@@ -66,43 +70,48 @@ pub fn part_one(grid: &Grid) -> usize {
 }
 
 pub fn part_two(grid: &Grid) -> u32 {
-    let mut scores = vec![1; grid.size * grid.size];
+    let mut max_score = 0;
 
-    let mut counts_up: Vec<[u32; 10]> = vec![[0; 10]; grid.size];
     for (y, row) in grid.rows().enumerate() {
-        let mut counts_left = [0; 10];
         for (x, &digit) in row.iter().enumerate() {
-            let index = y * grid.size + x;
-            let digit_usize = digit as usize;
-            scores[index] *= counts_left[digit_usize];
-            scores[index] *= counts_up[x][digit_usize];
-            for counts in [&mut counts_left, &mut counts_up[x]].iter_mut() {
-                counts[..=digit_usize].fill(1);
-                for count in &mut counts[(digit_usize + 1)..] {
-                    *count += 1;
+            let mut left_count = 0;
+            for x in (0..x).rev() {
+                left_count += 1;
+                if grid.get(x, y) >= Some(digit) {
+                    break;
                 }
             }
+
+            let mut right_count = 0;
+            for x in x + 1..grid.size {
+                right_count += 1;
+                if grid.get(x, y) >= Some(digit) {
+                    break;
+                }
+            }
+
+            let mut up_count = 0;
+            for y in (0..y).rev() {
+                up_count += 1;
+                if grid.get(x, y) >= Some(digit) {
+                    break;
+                }
+            }
+
+            let mut down_count = 0;
+            for y in y + 1..grid.size {
+                down_count += 1;
+                if grid.get(x, y) >= Some(digit) {
+                    break;
+                }
+            }
+
+            let score = left_count * right_count * up_count * down_count;
+            max_score = cmp::max(max_score, score);
         }
     }
 
-    let mut counts_down: Vec<[u32; 10]> = vec![[0; 10]; grid.size];
-    for (y, row) in grid.rows().enumerate().rev() {
-        let mut counts_right = [0; 10];
-        for (x, &digit) in row.iter().enumerate().rev() {
-            let index = y * grid.size + x;
-            let digit_usize = digit as usize;
-            scores[index] *= counts_right[digit_usize];
-            scores[index] *= counts_down[x][digit_usize];
-            for counts in [&mut counts_right, &mut counts_down[x]].iter_mut() {
-                counts[..=digit_usize].fill(1);
-                for count in &mut counts[(digit_usize + 1)..] {
-                    *count += 1;
-                }
-            }
-        }
-    }
-
-    *scores.iter().max().unwrap()
+    max_score
 }
 
 #[cfg(test)]
