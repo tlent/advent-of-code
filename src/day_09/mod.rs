@@ -19,7 +19,7 @@ struct Position {
 }
 
 impl Position {
-    fn is_adjacent_to(&self, other: &Self) -> bool {
+    const fn is_adjacent_to(self, other: Self) -> bool {
         self.x.abs_diff(other.x) <= 1 && self.y.abs_diff(other.y) <= 1
     }
 }
@@ -34,7 +34,7 @@ pub fn parse_input(input: &str) -> Vec<Motion> {
                 "R" => Direction::Right,
                 "U" => Direction::Up,
                 "D" => Direction::Down,
-                _ => panic!("invalid direction {}", d),
+                _ => panic!("invalid direction {d}"),
             };
             let steps = s.parse().unwrap();
             (direction, steps)
@@ -66,7 +66,7 @@ fn count_tail_positions(motions: &[Motion], knot_count: usize) -> usize {
             head_position.y += dy;
             let mut leader = *head_position;
             for follower in &mut current_positions[1..] {
-                if leader.is_adjacent_to(follower) {
+                if leader.is_adjacent_to(*follower) {
                     break;
                 }
                 follower.x += (leader.x - follower.x).signum();

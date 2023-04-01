@@ -46,16 +46,15 @@ pub fn solve(instructions: &[Instruction]) -> (i32, String) {
         }
         display_position += 1;
 
-        if let Some(v) = stored_add.take() {
-            sprite_position += v;
-        } else {
-            match instruction_iter.next() {
+        match stored_add.take() {
+            Some(v) => sprite_position += v,
+            None => match instruction_iter.next() {
                 Some(Instruction::Noop) => {}
                 Some(Instruction::Add(v)) => {
                     stored_add = Some(*v);
                 }
                 None => unreachable!(),
-            }
+            },
         }
     }
     (sum, display)

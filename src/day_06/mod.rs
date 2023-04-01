@@ -40,7 +40,7 @@ fn find_unique_window_index(bytes: &[u8], window_size: usize) -> Option<usize> {
     None
 }
 
-fn to_index(byte: u8) -> usize {
+const fn to_index(byte: u8) -> usize {
     (byte - b'a') as usize
 }
 

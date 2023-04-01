@@ -19,7 +19,7 @@ pub fn parse_input(input: &str) -> (Vec<usize>, usize) {
                     .next()
                     .and_then(|s| s.parse::<usize>().ok());
                 if let Some(size) = file_size {
-                    for directory_size in stack.iter_mut() {
+                    for directory_size in &mut stack {
                         *directory_size += size;
                     }
                     root_size += size;

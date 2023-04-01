@@ -52,9 +52,9 @@ fn find_common_byte(sets: &[Set]) -> Option<u8> {
     }
     common
         .iter()
-        .enumerate()
-        .find(|(_, &is_common)| is_common)
-        .map(|(set_index, _)| to_byte(set_index))
+        .zip(0..)
+        .find(|(&is_common, _)| is_common)
+        .map(|(_, set_index)| to_byte(set_index))
 }
 
 fn priority(byte: u8) -> u32 {
@@ -73,10 +73,10 @@ fn to_set_index(byte: u8) -> usize {
     })
 }
 
-fn to_byte(set_index: usize) -> u8 {
+fn to_byte(set_index: u8) -> u8 {
     match set_index {
-        0..=25 => b'a' + set_index as u8,
-        26..=51 => b'A' + (set_index - 26) as u8,
+        0..=25 => b'a' + set_index,
+        26..=51 => b'A' + (set_index - 26),
         _ => panic!("Invalid index"),
     }
 }

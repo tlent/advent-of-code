@@ -100,7 +100,7 @@ impl<T> SliceExt for [T] {
                 (item0, item1)
             }
             Ordering::Equal => {
-                panic!("[T]::get_two_mut(): received same index twice ({})", index0)
+                panic!("[T]::get_two_mut(): received same index twice ({index0})")
             }
             Ordering::Greater => {
                 let mut iter = self.iter_mut();
