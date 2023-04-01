@@ -1,6 +1,7 @@
 use advent_of_code_2022::day_06::{self, INPUT};
 
 fn main() {
-    println!("{}", day_06::part_one(INPUT));
-    println!("{}", day_06::part_two(INPUT));
+    let part_one = day_06::part_one(INPUT);
+    let part_two = day_06::part_two(INPUT);
+    println!("{part_one}\n{part_two}");
 }
