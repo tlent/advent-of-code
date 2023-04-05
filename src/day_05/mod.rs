@@ -61,10 +61,7 @@ pub fn part_one(mut stacks: Vec<Vec<u8>>, moves: &[Move]) -> String {
 }
 
 pub fn part_two(stacks: Vec<Vec<u8>>, moves: &[Move]) -> String {
-    let stacks = stacks
-        .into_iter()
-        .map(|stack| RefCell::new(stack))
-        .collect::<Vec<_>>();
+    let stacks = stacks.into_iter().map(RefCell::new).collect::<Vec<_>>();
     for &Move {
         count,
         source_index,
@@ -78,7 +75,7 @@ pub fn part_two(stacks: Vec<Vec<u8>>, moves: &[Move]) -> String {
     }
     let stacks = stacks
         .into_iter()
-        .map(|stack| stack.into_inner())
+        .map(RefCell::into_inner)
         .collect::<Vec<_>>();
     get_top_of_stacks(&stacks)
 }

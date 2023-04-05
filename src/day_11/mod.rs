@@ -42,8 +42,8 @@ pub fn parse_input(input: &str) -> Monkeys {
             let operation_str = &iter.next().unwrap()[23..];
             let operation = match operation_str {
                 "* old" => Operation::Square,
-                s if s.starts_with("*") => Operation::Multiply(s[2..].parse().unwrap()),
-                s if s.starts_with("+") => Operation::Add(s[2..].parse().unwrap()),
+                s if s.starts_with('*') => Operation::Multiply(s[2..].parse().unwrap()),
+                s if s.starts_with('+') => Operation::Add(s[2..].parse().unwrap()),
                 _ => panic!("Unknown operation: {operation_str}"),
             };
             let divisor = iter.next().unwrap()[21..].parse().unwrap();
@@ -63,15 +63,15 @@ pub fn parse_input(input: &str) -> Monkeys {
         .collect()
 }
 
-pub fn part_one(monkeys: Monkeys) -> usize {
+pub fn part_one(monkeys: &mut Monkeys) -> usize {
     const ROUNDS: usize = 20;
     for _round in 0..ROUNDS {
-        round(&monkeys, |v| v / 3);
+        round(monkeys, |v| v / 3);
     }
-    monkey_business_level(&monkeys)
+    monkey_business_level(monkeys)
 }
 
-pub fn part_two(monkeys: Monkeys) -> usize {
+pub fn part_two(monkeys: &mut Monkeys) -> usize {
     const ROUNDS: usize = 10_000;
     let test_divisors_product = monkeys
         .iter()
@@ -80,7 +80,7 @@ pub fn part_two(monkeys: Monkeys) -> usize {
     let mut seen = HashMap::default();
     let mut previous_inspection_counts = vec![];
     for round_number in 0..ROUNDS {
-        previous_inspection_counts.push(get_inspection_counts(&monkeys));
+        previous_inspection_counts.push(get_inspection_counts(monkeys));
         let monkeys_held_items = monkeys
             .iter()
             .map(|m| m.borrow().held_items.clone())
@@ -94,25 +94,25 @@ pub fn part_two(monkeys: Monkeys) -> usize {
             let cycle_start_counts = &cycle_counts[0];
             let cycle_end_counts = cycle_counts.last().unwrap();
             let remainder_counts = &cycle_counts[remainder];
-            for (i, monkey) in monkeys.iter().enumerate() {
+            for (i, monkey) in monkeys.iter_mut().enumerate() {
                 let cycle_increment = cycle_end_counts[i] - cycle_start_counts[i];
                 let remainder_increment = remainder_counts[i] - cycle_start_counts[i];
-                monkey.borrow_mut().inspection_count +=
+                monkey.get_mut().inspection_count +=
                     cycle_increment * remaining_cycles + remainder_increment;
             }
             break;
         }
         seen.insert(monkeys_held_items, round_number);
-        round(&monkeys, |v| v % test_divisors_product);
+        round(monkeys, |v| v % test_divisors_product);
     }
-    monkey_business_level(&monkeys)
+    monkey_business_level(monkeys)
 }
 
-fn round<F>(monkeys: &Monkeys, map_operation_result: F)
+fn round<F>(monkeys: &mut Monkeys, map_operation_result: F)
 where
     F: Fn(usize) -> usize,
 {
-    for monkey_refcell in monkeys {
+    for monkey_refcell in monkeys.iter() {
         let mut monkey = monkey_refcell.borrow_mut();
         monkey.inspection_count += monkey.held_items.len();
         let Test {
@@ -156,13 +156,13 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        let monkeys = parse_input(INPUT);
-        assert_eq!(part_one(monkeys), 69918);
+        let mut monkeys = parse_input(INPUT);
+        assert_eq!(part_one(&mut monkeys), 69918);
     }
 
     #[test]
     fn test_part_two() {
-        let monkeys = parse_input(INPUT);
-        assert_eq!(part_two(monkeys), 19573408701);
+        let mut monkeys = parse_input(INPUT);
+        assert_eq!(part_two(&mut monkeys), 19_573_408_701);
     }
 }

@@ -142,6 +142,6 @@ mod test {
     #[test]
     fn test_part_two() {
         let grid = parse_input(INPUT);
-        assert_eq!(part_two(&grid), 201684);
+        assert_eq!(part_two(&grid), 201_684);
     }
 }

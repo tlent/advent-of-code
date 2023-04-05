@@ -24,6 +24,6 @@ mod test {
         let group_sums = parse_input(INPUT);
         let (part_one, part_two) = solve(group_sums);
         assert_eq!(part_one, 70509);
-        assert_eq!(part_two, 208567);
+        assert_eq!(part_two, 208_567);
     }
 }

@@ -11,7 +11,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("day_11::part_one", |b| {
         b.iter_batched(
             || monkeys.clone(),
-            |monkeys| day_11::part_one(black_box(monkeys)),
+            |mut monkeys| day_11::part_one(black_box(&mut monkeys)),
             BatchSize::SmallInput,
         );
     });
@@ -19,7 +19,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("day_11::part_two", |b| {
         b.iter_batched(
             || monkeys.clone(),
-            |monkeys| day_11::part_two(black_box(monkeys)),
+            |mut monkeys| day_11::part_two(black_box(&mut monkeys)),
             BatchSize::SmallInput,
         );
     });

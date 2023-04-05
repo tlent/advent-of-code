@@ -58,12 +58,12 @@ mod test {
     #[test]
     fn test_part_one() {
         let (directory_sizes, _) = parse_input(INPUT);
-        assert_eq!(part_one(&directory_sizes), 1743217);
+        assert_eq!(part_one(&directory_sizes), 1_743_217);
     }
 
     #[test]
     fn test_part_two() {
         let (directory_sizes, root_size) = parse_input(INPUT);
-        assert_eq!(part_two(&directory_sizes, root_size), 8319096);
+        assert_eq!(part_two(&directory_sizes, root_size), 8_319_096);
     }
 }
