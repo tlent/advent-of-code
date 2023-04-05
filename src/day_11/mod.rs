@@ -74,9 +74,9 @@ pub fn part_two(monkeys: &[RefCell<Monkey>]) -> usize {
         .map(|monkey| monkey.borrow().test.divisor)
         .product::<usize>();
     let mut seen = HashMap::default();
-    let mut previous_monkey_counts = vec![];
+    let mut previous_inspection_counts = vec![];
     for round_number in 0..ROUNDS {
-        previous_monkey_counts.push(get_inspection_counts(&monkeys));
+        previous_inspection_counts.push(get_inspection_counts(&monkeys));
         let monkeys_held_items = monkeys
             .iter()
             .map(|m| m.borrow().held_items.clone())
@@ -86,7 +86,7 @@ pub fn part_two(monkeys: &[RefCell<Monkey>]) -> usize {
             let remaining_rounds = ROUNDS - round_number;
             let remaining_cycles = remaining_rounds / cycle_len;
             let remainder = remaining_rounds % cycle_len;
-            let cycle_counts = &previous_monkey_counts[cycle_start..];
+            let cycle_counts = &previous_inspection_counts[cycle_start..];
             let cycle_start_counts = &cycle_counts[0];
             let cycle_end_counts = cycle_counts.last().unwrap();
             let remainder_counts = &cycle_counts[remainder];
