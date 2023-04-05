@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::cell::RefCell;
 
 pub const INPUT: &str = include_str!("input.txt");
 
@@ -60,17 +60,26 @@ pub fn part_one(mut stacks: Vec<Vec<u8>>, moves: &[Move]) -> String {
     get_top_of_stacks(&stacks)
 }
 
-pub fn part_two(mut stacks: Vec<Vec<u8>>, moves: &[Move]) -> String {
+pub fn part_two(stacks: Vec<Vec<u8>>, moves: &[Move]) -> String {
+    let stacks = stacks
+        .into_iter()
+        .map(|stack| RefCell::new(stack))
+        .collect::<Vec<_>>();
     for &Move {
         count,
         source_index,
         destination_index,
     } in moves
     {
-        let (source, destination) = stacks.get_two_mut(source_index, destination_index);
+        let mut source = stacks[source_index].borrow_mut();
+        let mut destination = stacks[destination_index].borrow_mut();
         let source_len = source.len();
         destination.extend(source.drain(source_len - count..));
     }
+    let stacks = stacks
+        .into_iter()
+        .map(|stack| stack.into_inner())
+        .collect::<Vec<_>>();
     get_top_of_stacks(&stacks)
 }
 
@@ -80,36 +89,6 @@ fn get_top_of_stacks(stacks: &[Vec<u8>]) -> String {
         .filter_map(|stack| stack.last().copied())
         .collect();
     unsafe { String::from_utf8_unchecked(tops) }
-}
-
-trait SliceExt {
-    type Item;
-
-    fn get_two_mut(&mut self, index0: usize, index1: usize) -> (&mut Self::Item, &mut Self::Item);
-}
-
-impl<T> SliceExt for [T] {
-    type Item = T;
-
-    fn get_two_mut(&mut self, index0: usize, index1: usize) -> (&mut Self::Item, &mut Self::Item) {
-        match index0.cmp(&index1) {
-            Ordering::Less => {
-                let mut iter = self.iter_mut();
-                let item0 = iter.nth(index0).unwrap();
-                let item1 = iter.nth(index1 - index0 - 1).unwrap();
-                (item0, item1)
-            }
-            Ordering::Equal => {
-                panic!("[T]::get_two_mut(): received same index twice ({index0})")
-            }
-            Ordering::Greater => {
-                let mut iter = self.iter_mut();
-                let item1 = iter.nth(index1).unwrap();
-                let item0 = iter.nth(index0 - index1 - 1).unwrap();
-                (item0, item1)
-            }
-        }
-    }
 }
 
 #[cfg(test)]
