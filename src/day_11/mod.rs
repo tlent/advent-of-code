@@ -1,4 +1,7 @@
-use std::{cell::RefCell, collections::BTreeMap};
+use std::{
+    cell::RefCell,
+    collections::{btree_map::Entry, BTreeMap},
+};
 
 pub const INPUT: &str = include_str!("input.txt");
 
@@ -84,24 +87,27 @@ pub fn part_two(monkeys: &mut Monkeys) -> usize {
             .iter()
             .map(|m| m.borrow().held_items.clone())
             .collect::<Vec<_>>();
-        if let Some(&cycle_start) = seen.get(&monkeys_held_items) {
-            let cycle_len = round_number - cycle_start;
-            let remaining_rounds = ROUNDS - round_number;
-            let remaining_cycles = remaining_rounds / cycle_len;
-            let remainder = remaining_rounds % cycle_len;
-            let cycle_counts = &previous_inspection_counts[cycle_start..];
-            let cycle_start_counts = &cycle_counts[0];
-            let cycle_end_counts = cycle_counts.last().unwrap();
-            let remainder_counts = &cycle_counts[remainder];
-            for (i, monkey) in monkeys.iter_mut().enumerate() {
-                let cycle_increment = cycle_end_counts[i] - cycle_start_counts[i];
-                let remainder_increment = remainder_counts[i] - cycle_start_counts[i];
-                monkey.get_mut().inspection_count +=
-                    cycle_increment * remaining_cycles + remainder_increment;
+        match seen.entry(monkeys_held_items) {
+            Entry::Vacant(v) => v.insert(round_number),
+            Entry::Occupied(o) => {
+                let cycle_start = *o.get();
+                let cycle_len = round_number - cycle_start;
+                let remaining_rounds = ROUNDS - round_number;
+                let remaining_cycles = remaining_rounds / cycle_len;
+                let remainder = remaining_rounds % cycle_len;
+                let cycle_counts = &previous_inspection_counts[cycle_start..];
+                let cycle_start_counts = &cycle_counts[0];
+                let cycle_end_counts = cycle_counts.last().unwrap();
+                let remainder_counts = &cycle_counts[remainder];
+                for (i, monkey) in monkeys.iter_mut().enumerate() {
+                    let cycle_increment = cycle_end_counts[i] - cycle_start_counts[i];
+                    let remainder_increment = remainder_counts[i] - cycle_start_counts[i];
+                    monkey.get_mut().inspection_count +=
+                        cycle_increment * remaining_cycles + remainder_increment;
+                }
+                break;
             }
-            break;
-        }
-        seen.insert(monkeys_held_items, round_number);
+        };
         round(monkeys, |v| v % test_divisors_product);
     }
     monkey_business_level(monkeys)
