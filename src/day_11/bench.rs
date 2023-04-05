@@ -1,5 +1,5 @@
 use advent_of_code_2022::day_11::{self, INPUT};
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let monkeys = day_11::parse_input(INPUT);
@@ -9,11 +9,19 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("day_11::part_one", |b| {
-        b.iter(|| day_11::part_one(black_box(&monkeys)));
+        b.iter_batched(
+            || monkeys.clone(),
+            |monkeys| day_11::part_one(black_box(monkeys)),
+            BatchSize::SmallInput,
+        );
     });
 
     c.bench_function("day_11::part_two", |b| {
-        b.iter(|| day_11::part_two(black_box(&monkeys)));
+        b.iter_batched(
+            || monkeys.clone(),
+            |monkeys| day_11::part_two(black_box(monkeys)),
+            BatchSize::SmallInput,
+        );
     });
 }
 

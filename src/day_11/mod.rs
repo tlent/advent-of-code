@@ -3,7 +3,7 @@ use std::cell::RefCell;
 
 pub const INPUT: &str = include_str!("input.txt");
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Monkey {
     held_items: Vec<usize>,
     inspection_count: usize,
@@ -18,7 +18,7 @@ pub enum Operation {
     Square,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Test {
     divisor: usize,
     true_destination: usize,
@@ -59,15 +59,15 @@ pub fn parse_input(input: &str) -> Vec<RefCell<Monkey>> {
         .collect()
 }
 
-pub fn part_one(monkeys: &[RefCell<Monkey>]) -> usize {
+pub fn part_one(monkeys: Vec<RefCell<Monkey>>) -> usize {
     const ROUNDS: usize = 20;
     for _round in 0..ROUNDS {
-        round(monkeys, |v| v / 3);
+        round(&monkeys, |v| v / 3);
     }
-    monkey_business_level(monkeys)
+    monkey_business_level(&monkeys)
 }
 
-pub fn part_two(monkeys: &[RefCell<Monkey>]) -> usize {
+pub fn part_two(monkeys: Vec<RefCell<Monkey>>) -> usize {
     const ROUNDS: usize = 10_000;
     let test_divisors_product = monkeys
         .iter()
@@ -99,7 +99,7 @@ pub fn part_two(monkeys: &[RefCell<Monkey>]) -> usize {
             break;
         }
         seen.insert(monkeys_held_items, round_number);
-        round(monkeys, |v| v % test_divisors_product);
+        round(&monkeys, |v| v % test_divisors_product);
     }
     monkey_business_level(&monkeys)
 }
@@ -153,12 +153,12 @@ mod test {
     #[test]
     fn test_part_one() {
         let monkeys = parse_input(INPUT);
-        assert_eq!(part_one(&monkeys), 69918);
+        assert_eq!(part_one(monkeys), 69918);
     }
 
     #[test]
     fn test_part_two() {
         let monkeys = parse_input(INPUT);
-        assert_eq!(part_two(&monkeys), 19573408701);
+        assert_eq!(part_two(monkeys), 19573408701);
     }
 }
