@@ -25,7 +25,11 @@ pub struct Test {
     false_destination: usize,
 }
 
-pub fn parse_input(input: &str) -> Vec<RefCell<Monkey>> {
+// RefCell is necessary for the `round()` function to move items
+// from one monkey's `held_items` to another monkey's `held_items`
+type Monkeys = Vec<RefCell<Monkey>>;
+
+pub fn parse_input(input: &str) -> Monkeys {
     input
         .split("\n\n")
         .map(|s| {
@@ -59,7 +63,7 @@ pub fn parse_input(input: &str) -> Vec<RefCell<Monkey>> {
         .collect()
 }
 
-pub fn part_one(monkeys: Vec<RefCell<Monkey>>) -> usize {
+pub fn part_one(monkeys: Monkeys) -> usize {
     const ROUNDS: usize = 20;
     for _round in 0..ROUNDS {
         round(&monkeys, |v| v / 3);
@@ -67,7 +71,7 @@ pub fn part_one(monkeys: Vec<RefCell<Monkey>>) -> usize {
     monkey_business_level(&monkeys)
 }
 
-pub fn part_two(monkeys: Vec<RefCell<Monkey>>) -> usize {
+pub fn part_two(monkeys: Monkeys) -> usize {
     const ROUNDS: usize = 10_000;
     let test_divisors_product = monkeys
         .iter()
@@ -104,7 +108,7 @@ pub fn part_two(monkeys: Vec<RefCell<Monkey>>) -> usize {
     monkey_business_level(&monkeys)
 }
 
-fn round<F>(monkeys: &[RefCell<Monkey>], map_operation_result: F)
+fn round<F>(monkeys: &Monkeys, map_operation_result: F)
 where
     F: Fn(usize) -> usize,
 {
@@ -133,13 +137,13 @@ where
     }
 }
 
-fn monkey_business_level(monkeys: &[RefCell<Monkey>]) -> usize {
+fn monkey_business_level(monkeys: &Monkeys) -> usize {
     let mut inspection_counts = get_inspection_counts(monkeys);
     inspection_counts.sort_unstable();
     inspection_counts.into_iter().rev().take(2).product()
 }
 
-fn get_inspection_counts(monkeys: &[RefCell<Monkey>]) -> Vec<usize> {
+fn get_inspection_counts(monkeys: &Monkeys) -> Vec<usize> {
     monkeys
         .iter()
         .map(|m| m.borrow().inspection_count)
