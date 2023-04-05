@@ -5,12 +5,13 @@ pub const INPUT: &str = include_str!("input.txt");
 
 #[derive(Debug)]
 pub struct Monkey {
-    starting_items: Vec<usize>,
+    held_items: Vec<usize>,
+    inspection_count: usize,
     operation: Operation,
     test: Test,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Operation {
     Add(usize),
     Multiply(usize),
@@ -24,13 +25,13 @@ pub struct Test {
     false_destination: usize,
 }
 
-pub fn parse_input(input: &str) -> Vec<Monkey> {
+pub fn parse_input(input: &str) -> Vec<RefCell<Monkey>> {
     input
         .split("\n\n")
         .map(|s| {
             let mut iter = s.lines();
-            let starting_items_str = &iter.nth(1).unwrap()[18..];
-            let starting_items = starting_items_str
+            let held_items_str = &iter.nth(1).unwrap()[18..];
+            let held_items = held_items_str
                 .split(", ")
                 .map(|s| s.parse().unwrap())
                 .collect();
@@ -44,53 +45,43 @@ pub fn parse_input(input: &str) -> Vec<Monkey> {
             let divisor = iter.next().unwrap()[21..].parse().unwrap();
             let true_destination = iter.next().unwrap()[29..].parse().unwrap();
             let false_destination = iter.next().unwrap()[30..].parse().unwrap();
-            Monkey {
-                starting_items,
+            RefCell::new(Monkey {
+                held_items,
+                inspection_count: 0,
                 operation,
                 test: Test {
                     divisor,
                     true_destination,
                     false_destination,
                 },
-            }
+            })
         })
         .collect()
 }
 
-pub fn part_one(monkeys: &[Monkey]) -> usize {
+pub fn part_one(monkeys: &[RefCell<Monkey>]) -> usize {
     const ROUNDS: usize = 20;
-    let monkey_items = monkeys
-        .iter()
-        .map(|monkey| RefCell::new(monkey.starting_items.clone()))
-        .collect::<Vec<_>>();
-    let mut monkey_counts = vec![0; monkeys.len()];
     for _round in 0..ROUNDS {
-        round(monkeys, &monkey_items, &mut monkey_counts, |v| v / 3);
+        round(monkeys, |v| v / 3);
     }
-    top_two_product(monkey_counts)
+    monkey_business_level(monkeys)
 }
 
-pub fn part_two(monkeys: &[Monkey]) -> usize {
+pub fn part_two(monkeys: &[RefCell<Monkey>]) -> usize {
     const ROUNDS: usize = 10_000;
     let test_divisors_product = monkeys
         .iter()
-        .map(|monkey| monkey.test.divisor)
+        .map(|monkey| monkey.borrow().test.divisor)
         .product::<usize>();
-    let monkey_items = monkeys
-        .iter()
-        .map(|monkey| RefCell::new(monkey.starting_items.clone()))
-        .collect::<Vec<_>>();
-    let mut monkey_counts = vec![0; monkeys.len()];
     let mut seen = HashMap::default();
     let mut previous_monkey_counts = vec![];
     for round_number in 0..ROUNDS {
-        previous_monkey_counts.push(monkey_counts.clone());
-        let inner_items = monkey_items
-            .clone()
-            .into_iter()
-            .map(|i| i.into_inner())
+        previous_monkey_counts.push(get_inspection_counts(&monkeys));
+        let monkeys_held_items = monkeys
+            .iter()
+            .map(|m| m.borrow().held_items.clone())
             .collect::<Vec<_>>();
-        if let Some(&cycle_start) = seen.get(&inner_items) {
+        if let Some(&cycle_start) = seen.get(&monkeys_held_items) {
             let cycle_len = round_number - cycle_start;
             let remaining_rounds = ROUNDS - round_number;
             let remaining_cycles = remaining_rounds / cycle_len;
@@ -99,39 +90,35 @@ pub fn part_two(monkeys: &[Monkey]) -> usize {
             let cycle_start_counts = &cycle_counts[0];
             let cycle_end_counts = cycle_counts.last().unwrap();
             let remainder_counts = &cycle_counts[remainder];
-            for (i, count) in monkey_counts.iter_mut().enumerate() {
+            for (i, monkey) in monkeys.iter().enumerate() {
                 let cycle_increment = cycle_end_counts[i] - cycle_start_counts[i];
                 let remainder_increment = remainder_counts[i] - cycle_start_counts[i];
-                *count += cycle_increment * remaining_cycles + remainder_increment;
+                monkey.borrow_mut().inspection_count +=
+                    cycle_increment * remaining_cycles + remainder_increment;
             }
             break;
         }
-        seen.insert(inner_items, round_number);
-        round(monkeys, &monkey_items, &mut monkey_counts, |v| {
-            v % test_divisors_product
-        });
+        seen.insert(monkeys_held_items, round_number);
+        round(monkeys, |v| v % test_divisors_product);
     }
-    top_two_product(monkey_counts)
+    monkey_business_level(&monkeys)
 }
 
-fn round<F>(
-    monkeys: &[Monkey],
-    monkey_items: &[RefCell<Vec<usize>>],
-    monkey_counts: &mut [usize],
-    map_operation_result: F,
-) where
+fn round<F>(monkeys: &[RefCell<Monkey>], map_operation_result: F)
+where
     F: Fn(usize) -> usize,
 {
-    for (i, monkey) in monkeys.iter().enumerate() {
-        let mut items = monkey_items[i].borrow_mut();
-        monkey_counts[i] += items.len();
+    for monkey_refcell in monkeys {
+        let mut monkey = monkey_refcell.borrow_mut();
+        monkey.inspection_count += monkey.held_items.len();
         let Test {
             divisor,
             true_destination,
             false_destination,
         } = monkey.test;
-        for item in items.drain(..) {
-            let result = map_operation_result(match monkey.operation {
+        let operation = monkey.operation;
+        for item in monkey.held_items.drain(..) {
+            let result = map_operation_result(match operation {
                 Operation::Add(n) => item + n,
                 Operation::Multiply(n) => item * n,
                 Operation::Square => item * item,
@@ -141,14 +128,22 @@ fn round<F>(
             } else {
                 false_destination
             };
-            monkey_items[destination].borrow_mut().push(result);
+            monkeys[destination].borrow_mut().held_items.push(result);
         }
     }
 }
 
-fn top_two_product(mut values: Vec<usize>) -> usize {
-    values.sort_unstable();
-    values.into_iter().rev().take(2).product()
+fn monkey_business_level(monkeys: &[RefCell<Monkey>]) -> usize {
+    let mut inspection_counts = get_inspection_counts(monkeys);
+    inspection_counts.sort_unstable();
+    inspection_counts.into_iter().rev().take(2).product()
+}
+
+fn get_inspection_counts(monkeys: &[RefCell<Monkey>]) -> Vec<usize> {
+    monkeys
+        .iter()
+        .map(|m| m.borrow().inspection_count)
+        .collect()
 }
 
 #[cfg(test)]
