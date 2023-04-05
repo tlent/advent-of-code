@@ -58,27 +58,13 @@ pub fn parse_input(input: &str) -> Vec<Monkey> {
 }
 
 pub fn part_one(monkeys: &[Monkey]) -> usize {
-    solve(monkeys, 20, |item| item / 3)
-}
-
-pub fn part_two(monkeys: &[Monkey]) -> usize {
-    let modulo = monkeys
-        .iter()
-        .map(|monkey| monkey.test.divisor)
-        .product::<usize>();
-    solve_using_cycle(monkeys, 10_000, |item| item % modulo)
-}
-
-fn solve<F>(monkeys: &[Monkey], rounds: usize, after_operation: F) -> usize
-where
-    F: Fn(usize) -> usize,
-{
+    const ROUNDS: usize = 20;
     let monkey_items = monkeys
         .iter()
         .map(|monkey| RefCell::new(monkey.starting_items.clone()))
         .collect::<Vec<_>>();
     let mut monkey_counts = vec![0; monkeys.len()];
-    for _round in 0..rounds {
+    for _round in 0..ROUNDS {
         for (i, monkey) in monkeys.iter().enumerate() {
             let mut items = monkey_items[i].borrow_mut();
             monkey_counts[i] += items.len();
@@ -88,11 +74,11 @@ where
                 false_destination,
             } = monkey.test;
             for item in items.drain(..) {
-                let result = after_operation(match monkey.operation {
+                let result = match monkey.operation {
                     Operation::Add(n) => item + n,
                     Operation::Multiply(n) => item * n,
                     Operation::Square => item * item,
-                });
+                } / 3;
                 let destination = if result % divisor == 0 {
                     true_destination
                 } else {
@@ -106,10 +92,12 @@ where
     monkey_counts.into_iter().rev().take(2).product()
 }
 
-fn solve_using_cycle<F>(monkeys: &[Monkey], rounds: usize, after_operation: F) -> usize
-where
-    F: Fn(usize) -> usize,
-{
+pub fn part_two(monkeys: &[Monkey]) -> usize {
+    const ROUNDS: usize = 10_000;
+    let test_divisors_product = monkeys
+        .iter()
+        .map(|monkey| monkey.test.divisor)
+        .product::<usize>();
     let monkey_items = monkeys
         .iter()
         .map(|monkey| RefCell::new(monkey.starting_items.clone()))
@@ -117,7 +105,7 @@ where
     let mut monkey_counts = vec![0; monkeys.len()];
     let mut seen = HashMap::default();
     let mut previous_monkey_counts = vec![];
-    for round in 0..rounds {
+    for round in 0..ROUNDS {
         previous_monkey_counts.push(monkey_counts.clone());
         let inner_items = monkey_items
             .clone()
@@ -126,7 +114,7 @@ where
             .collect::<Vec<_>>();
         if let Some(&cycle_start) = seen.get(&inner_items) {
             let cycle_len = round - cycle_start;
-            let remaining_rounds = rounds - round;
+            let remaining_rounds = ROUNDS - round;
             let remaining_cycles = remaining_rounds / cycle_len;
             let remainder = remaining_rounds % cycle_len;
             let cycle_counts = &previous_monkey_counts[cycle_start..];
@@ -150,11 +138,11 @@ where
                 false_destination,
             } = monkey.test;
             for item in items.drain(..) {
-                let result = after_operation(match monkey.operation {
+                let result = match monkey.operation {
                     Operation::Add(n) => item + n,
                     Operation::Multiply(n) => item * n,
                     Operation::Square => item * item,
-                });
+                } % test_divisors_product;
                 let destination = if result % divisor == 0 {
                     true_destination
                 } else {
