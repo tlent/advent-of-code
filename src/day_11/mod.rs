@@ -65,31 +65,9 @@ pub fn part_one(monkeys: &[Monkey]) -> usize {
         .collect::<Vec<_>>();
     let mut monkey_counts = vec![0; monkeys.len()];
     for _round in 0..ROUNDS {
-        for (i, monkey) in monkeys.iter().enumerate() {
-            let mut items = monkey_items[i].borrow_mut();
-            monkey_counts[i] += items.len();
-            let Test {
-                divisor,
-                true_destination,
-                false_destination,
-            } = monkey.test;
-            for item in items.drain(..) {
-                let result = match monkey.operation {
-                    Operation::Add(n) => item + n,
-                    Operation::Multiply(n) => item * n,
-                    Operation::Square => item * item,
-                } / 3;
-                let destination = if result % divisor == 0 {
-                    true_destination
-                } else {
-                    false_destination
-                };
-                monkey_items[destination].borrow_mut().push(result);
-            }
-        }
+        round(monkeys, &monkey_items, &mut monkey_counts, |v| v / 3);
     }
-    monkey_counts.sort_unstable();
-    monkey_counts.into_iter().rev().take(2).product()
+    top_two_product(monkey_counts)
 }
 
 pub fn part_two(monkeys: &[Monkey]) -> usize {
@@ -105,7 +83,7 @@ pub fn part_two(monkeys: &[Monkey]) -> usize {
     let mut monkey_counts = vec![0; monkeys.len()];
     let mut seen = HashMap::default();
     let mut previous_monkey_counts = vec![];
-    for round in 0..ROUNDS {
+    for round_number in 0..ROUNDS {
         previous_monkey_counts.push(monkey_counts.clone());
         let inner_items = monkey_items
             .clone()
@@ -113,8 +91,8 @@ pub fn part_two(monkeys: &[Monkey]) -> usize {
             .map(|i| i.into_inner())
             .collect::<Vec<_>>();
         if let Some(&cycle_start) = seen.get(&inner_items) {
-            let cycle_len = round - cycle_start;
-            let remaining_rounds = ROUNDS - round;
+            let cycle_len = round_number - cycle_start;
+            let remaining_rounds = ROUNDS - round_number;
             let remaining_cycles = remaining_rounds / cycle_len;
             let remainder = remaining_rounds % cycle_len;
             let cycle_counts = &previous_monkey_counts[cycle_start..];
@@ -128,32 +106,49 @@ pub fn part_two(monkeys: &[Monkey]) -> usize {
             }
             break;
         }
-        seen.insert(inner_items, round);
-        for (i, monkey) in monkeys.iter().enumerate() {
-            let mut items = monkey_items[i].borrow_mut();
-            monkey_counts[i] += items.len();
-            let Test {
-                divisor,
-                true_destination,
-                false_destination,
-            } = monkey.test;
-            for item in items.drain(..) {
-                let result = match monkey.operation {
-                    Operation::Add(n) => item + n,
-                    Operation::Multiply(n) => item * n,
-                    Operation::Square => item * item,
-                } % test_divisors_product;
-                let destination = if result % divisor == 0 {
-                    true_destination
-                } else {
-                    false_destination
-                };
-                monkey_items[destination].borrow_mut().push(result);
-            }
+        seen.insert(inner_items, round_number);
+        round(monkeys, &monkey_items, &mut monkey_counts, |v| {
+            v % test_divisors_product
+        });
+    }
+    top_two_product(monkey_counts)
+}
+
+fn round<F>(
+    monkeys: &[Monkey],
+    monkey_items: &[RefCell<Vec<usize>>],
+    monkey_counts: &mut [usize],
+    map_operation_result: F,
+) where
+    F: Fn(usize) -> usize,
+{
+    for (i, monkey) in monkeys.iter().enumerate() {
+        let mut items = monkey_items[i].borrow_mut();
+        monkey_counts[i] += items.len();
+        let Test {
+            divisor,
+            true_destination,
+            false_destination,
+        } = monkey.test;
+        for item in items.drain(..) {
+            let result = map_operation_result(match monkey.operation {
+                Operation::Add(n) => item + n,
+                Operation::Multiply(n) => item * n,
+                Operation::Square => item * item,
+            });
+            let destination = if result % divisor == 0 {
+                true_destination
+            } else {
+                false_destination
+            };
+            monkey_items[destination].borrow_mut().push(result);
         }
     }
-    monkey_counts.sort_unstable();
-    monkey_counts.into_iter().rev().take(2).product()
+}
+
+fn top_two_product(mut values: Vec<usize>) -> usize {
+    values.sort_unstable();
+    values.into_iter().rev().take(2).product()
 }
 
 #[cfg(test)]
