@@ -67,7 +67,7 @@ pub fn parse_input(input: &str) -> Monkeys {
 
 pub fn part_one(monkeys: &mut Monkeys) -> usize {
     const ROUNDS: usize = 20;
-    for _round in 0..ROUNDS {
+    for _ in 0..ROUNDS {
         round(monkeys, |v| v / 3);
     }
     monkey_business_level(monkeys)
