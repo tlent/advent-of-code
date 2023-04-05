@@ -1,4 +1,4 @@
-use std::mem;
+use std::cell::RefCell;
 
 pub const INPUT: &str = include_str!("input.txt");
 
@@ -72,21 +72,21 @@ fn solve<F>(monkeys: &[Monkey], rounds: usize, after_operation: F) -> usize
 where
     F: Fn(usize) -> usize,
 {
-    let mut monkey_items = monkeys
+    let monkey_items = monkeys
         .iter()
-        .map(|monkey| monkey.starting_items.clone())
+        .map(|monkey| RefCell::new(monkey.starting_items.clone()))
         .collect::<Vec<_>>();
     let mut monkey_counts = vec![0; monkeys.len()];
     for _ in 0..rounds {
         for (i, monkey) in monkeys.iter().enumerate() {
-            let items = mem::take(&mut monkey_items[i]);
+            let mut items = monkey_items[i].borrow_mut();
             monkey_counts[i] += items.len();
             let Test {
                 divisor,
                 true_destination,
                 false_destination,
             } = monkey.test;
-            for item in items {
+            for item in items.drain(..) {
                 let result = after_operation(match monkey.operation {
                     Operation::Add(n) => item + n,
                     Operation::Multiply(n) => item * n,
@@ -97,7 +97,7 @@ where
                 } else {
                     false_destination
                 };
-                monkey_items[destination].push(result);
+                monkey_items[destination].borrow_mut().push(result);
             }
         }
     }
