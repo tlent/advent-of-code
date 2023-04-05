@@ -1,5 +1,4 @@
-use crate::HashMap;
-use std::cell::RefCell;
+use std::{cell::RefCell, collections::BTreeMap};
 
 pub const INPUT: &str = include_str!("input.txt");
 
@@ -77,7 +76,7 @@ pub fn part_two(monkeys: &mut Monkeys) -> usize {
         .iter()
         .map(|monkey| monkey.borrow().test.divisor)
         .product::<usize>();
-    let mut seen = HashMap::default();
+    let mut seen = BTreeMap::default();
     let mut previous_inspection_counts = vec![];
     for round_number in 0..ROUNDS {
         previous_inspection_counts.push(get_inspection_counts(monkeys));
