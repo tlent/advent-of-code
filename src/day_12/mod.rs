@@ -66,11 +66,10 @@ where
         if position == grid.target_position {
             return Some(steps);
         }
-        let seen = &mut seen[position];
-        if *seen {
+        if seen[position] {
             continue;
         }
-        *seen = true;
+        seen[position] = true;
         let x = position % grid.width;
         let y = position / grid.width;
         let adjacent_positions = [
@@ -85,7 +84,7 @@ where
         ]
         .into_iter()
         .filter_map(|p| {
-            p.filter(|&p| grid.heights[p] <= grid.heights[position] + 1)
+            p.filter(|&p| !seen[p] && grid.heights[p] <= grid.heights[position] + 1)
                 .map(|p| (p, steps + 1))
         });
         queue.extend(adjacent_positions);
