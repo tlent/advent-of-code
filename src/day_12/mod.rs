@@ -89,7 +89,6 @@ where
                 .map(|p| (p, steps + 1))
         });
         queue.extend(adjacent_positions);
-        dbg!(queue.len());
     }
     None
 }
