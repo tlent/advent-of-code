@@ -40,20 +40,21 @@ pub fn parse_input(input: &str) -> HeightMap {
     HeightMap::from_input(input)
 }
 
-pub fn part_one(grid: &HeightMap) -> usize {
-    find_shortest_path_len(grid, [grid.initial_position]).unwrap()
+pub fn part_one(height_map: &HeightMap) -> usize {
+    find_shortest_path_len(height_map, [height_map.initial_position]).unwrap()
 }
 
-pub fn part_two(grid: &HeightMap) -> usize {
+pub fn part_two(height_map: &HeightMap) -> usize {
     let starting_positions =
-        grid.heights
+        height_map
+            .heights
             .iter()
             .enumerate()
             .filter_map(|(i, &h)| if h == 0 { Some(i) } else { None });
-    find_shortest_path_len(grid, starting_positions).unwrap()
+    find_shortest_path_len(height_map, starting_positions).unwrap()
 }
 
-fn find_shortest_path_len<I>(grid: &HeightMap, starting_positions: I) -> Option<usize>
+fn find_shortest_path_len<I>(height_map: &HeightMap, starting_positions: I) -> Option<usize>
 where
     I: IntoIterator<Item = usize>,
 {
@@ -61,33 +62,34 @@ where
         .into_iter()
         .map(|p| (p, 0))
         .collect::<VecDeque<_>>();
-    let mut seen = vec![false; grid.width * grid.height];
+    let mut seen = vec![false; height_map.width * height_map.height];
     while let Some((position, steps)) = queue.pop_front() {
-        if position == grid.target_position {
+        if position == height_map.target_position {
             return Some(steps);
         }
         if seen[position] {
             continue;
         }
         seen[position] = true;
-        let x = position % grid.width;
-        let y = position / grid.width;
+        let x = position % height_map.width;
+        let y = position / height_map.width;
         let adjacent_positions = [
-            x.checked_sub(1).map(|x| x + y * grid.width),
+            x.checked_sub(1).map(|x| x + y * height_map.width),
             x.checked_add(1)
-                .filter(|&x| x < grid.width)
-                .map(|x| x + y * grid.width),
-            y.checked_sub(1).map(|y| x + y * grid.width),
+                .filter(|&x| x < height_map.width)
+                .map(|x| x + y * height_map.width),
+            y.checked_sub(1).map(|y| x + y * height_map.width),
             y.checked_add(1)
-                .filter(|&y| y < grid.height)
-                .map(|y| x + y * grid.width),
+                .filter(|&y| y < height_map.height)
+                .map(|y| x + y * height_map.width),
         ]
         .into_iter()
         .filter_map(|p| {
-            p.filter(|&p| !seen[p] && grid.heights[p] <= grid.heights[position] + 1)
+            p.filter(|&p| !seen[p] && height_map.heights[p] <= height_map.heights[position] + 1)
                 .map(|p| (p, steps + 1))
         });
         queue.extend(adjacent_positions);
+        dbg!(queue.len());
     }
     None
 }
@@ -98,13 +100,13 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        let grid = parse_input(INPUT);
-        assert_eq!(part_one(&grid), 472);
+        let height_map = parse_input(INPUT);
+        assert_eq!(part_one(&height_map), 472);
     }
 
     #[test]
     fn test_part_two() {
-        let grid = parse_input(INPUT);
-        assert_eq!(part_two(&grid), 465);
+        let height_map = parse_input(INPUT);
+        assert_eq!(part_two(&height_map), 465);
     }
 }
