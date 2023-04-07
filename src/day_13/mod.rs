@@ -80,15 +80,20 @@ pub fn part_one(packets: &[Value]) -> usize {
         .sum()
 }
 
-pub fn part_two(mut packets: Vec<Value>) -> usize {
+pub fn part_two(packets: &[Value]) -> usize {
     let decoder_keys = [
         Value::List(vec![Value::List(vec![Value::Integer(2)])]),
         Value::List(vec![Value::List(vec![Value::Integer(6)])]),
     ];
-    packets.extend(decoder_keys.clone());
-    packets.sort_unstable();
-    (packets.iter().position(|p| p == &decoder_keys[0]).unwrap() + 1)
-        * (packets.iter().position(|p| p == &decoder_keys[1]).unwrap() + 1)
+    let mut indices = [1, 1];
+    for p in packets {
+        for (key, index) in decoder_keys.iter().zip(indices.iter_mut()) {
+            if p < key {
+                *index += 1;
+            }
+        }
+    }
+    indices.iter().product()
 }
 
 #[cfg(test)]
@@ -104,6 +109,6 @@ mod test {
     #[test]
     fn test_part_two() {
         let packets = parse_input(INPUT);
-        assert_eq!(part_two(packets), 21_922);
+        assert_eq!(part_two(&packets), 21_922);
     }
 }

@@ -15,7 +15,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("day_13::part_two", |b| {
         b.iter_batched(
             || packets.clone(),
-            |packets| day_13::part_two(black_box(packets)),
+            |packets| day_13::part_two(black_box(&packets)),
             BatchSize::SmallInput,
         );
     });
