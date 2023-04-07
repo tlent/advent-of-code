@@ -53,14 +53,14 @@ pub fn part_two(motions: &[Motion]) -> usize {
 fn count_tail_positions(motions: &[Motion], knot_count: usize) -> usize {
     let mut current_positions = vec![Position::default(); knot_count];
     let mut tail_positions = HashSet::default();
-    for &(direction, steps) in motions {
+    for &(direction, step_count) in motions {
         let (dx, dy) = match direction {
             Direction::Left => (-1, 0),
             Direction::Right => (1, 0),
             Direction::Up => (0, 1),
             Direction::Down => (0, -1),
         };
-        for _ in 0..steps {
+        for _ in 0..step_count {
             let head_position = &mut current_positions[0];
             head_position.x += dx;
             head_position.y += dy;
