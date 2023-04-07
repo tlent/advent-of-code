@@ -32,10 +32,7 @@ impl FromStr for Value {
                     _ => {}
                 }
             }
-            let values = strs
-                .into_iter()
-                .map(str::parse)
-                .collect::<Result<_, _>>()?;
+            let values = strs.into_iter().map(str::parse).collect::<Result<_, _>>()?;
             Ok(Value::List(values))
         } else {
             Ok(Value::Integer(s.parse()?))
@@ -85,7 +82,8 @@ pub fn part_two(packets: &[Value]) -> usize {
         Value::List(vec![Value::List(vec![Value::Integer(2)])]),
         Value::List(vec![Value::List(vec![Value::Integer(6)])]),
     ];
-    let mut indices = [1, 1];
+    let mut indices = [1, 2];
+    
     for p in packets {
         for (key, index) in decoder_keys.iter().zip(indices.iter_mut()) {
             if p < key {
