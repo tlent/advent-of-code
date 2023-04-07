@@ -63,14 +63,13 @@ where
         .map(|p| (p, 0))
         .collect::<VecDeque<_>>();
     let mut seen = vec![false; height_map.width * height_map.height];
+    for p in &queue {
+        seen[p.0] = true;
+    }
     while let Some((position, steps)) = queue.pop_front() {
         if position == height_map.target_position {
             return Some(steps);
         }
-        if seen[position] {
-            continue;
-        }
-        seen[position] = true;
         let x = position % height_map.width;
         let y = position / height_map.width;
         let adjacent_positions = [
@@ -82,13 +81,15 @@ where
             y.checked_add(1)
                 .filter(|&y| y < height_map.height)
                 .map(|y| x + y * height_map.width),
-        ]
-        .into_iter()
-        .filter_map(|p| {
-            p.filter(|&p| !seen[p] && height_map.heights[p] <= height_map.heights[position] + 1)
-                .map(|p| (p, steps + 1))
-        });
-        queue.extend(adjacent_positions);
+        ];
+        for p in adjacent_positions {
+            if let Some(p) =
+                p.filter(|&p| !seen[p] && height_map.heights[p] <= height_map.heights[position] + 1)
+            {
+                seen[p] = true;
+                queue.push_back((p, steps + 1));
+            }
+        }
     }
     None
 }
