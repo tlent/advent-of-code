@@ -1,59 +1,102 @@
-use std::{num::ParseIntError, str::FromStr};
+use std::{cmp::Ordering, num::ParseIntError};
 
 pub const INPUT: &str = include_str!("input.txt");
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Value {
-    Integer(u32),
-    List(Vec<Value>),
+#[derive(Debug, PartialEq, Eq)]
+pub enum Value<'a> {
+    List(Values<'a>),
+    Integer { value: u32, str: &'a str },
 }
 
-impl FromStr for Value {
-    type Err = ParseIntError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with('[') && s.ends_with(']') {
-            let mut strs = vec![];
-            let mut level = 0;
-            let mut start = 1;
-            for (end, b) in s.bytes().enumerate().skip(1) {
-                match b {
-                    b']' if level == 0 => {
-                        if start < end {
-                            strs.push(&s[start..end]);
-                        }
-                    }
-                    b',' if level == 0 => {
-                        strs.push(&s[start..end]);
-                        start = end + 1;
-                    }
-                    b'[' => level += 1,
-                    b']' => level -= 1,
-                    _ => {}
-                }
-            }
-            let values = strs.into_iter().map(str::parse).collect::<Result<_, _>>()?;
-            Ok(Value::List(values))
+impl<'a> Value<'a> {
+    fn new(s: &'a str) -> Result<Self, ParseIntError> {
+        Ok(if s.starts_with('[') && s.ends_with(']') {
+            Value::List(Values::new(&s[1..s.len() - 1]))
         } else {
-            Ok(Value::Integer(s.parse()?))
-        }
+            Value::Integer {
+                value: s.parse()?,
+                str: s,
+            }
+        })
     }
 }
 
-impl PartialOrd for Value {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+impl<'a> PartialOrd for Value<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for Value {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+impl<'a> Ord for Value<'a> {
+    fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
-            (Value::Integer(s), Value::Integer(o)) => s.cmp(o),
-            (Value::List(s), Value::List(o)) => s.cmp(o),
-            (Value::Integer(_), Value::List(_)) => Value::List(vec![self.clone()]).cmp(other),
-            (Value::List(_), Value::Integer(_)) => self.cmp(&Value::List(vec![other.clone()])),
+            (Value::Integer { value: s, .. }, Value::Integer { value: o, .. }) => s.cmp(o),
+            (Value::List(s), Value::List(o)) => {
+                let mut self_values = s.clone();
+                let mut other_values = o.clone();
+                loop {
+                    match (self_values.next(), other_values.next()) {
+                        (Some(s), Some(o)) => match s.cmp(&o) {
+                            Ordering::Equal => {}
+                            ord => return ord,
+                        },
+                        (Some(_), None) => return Ordering::Greater,
+                        (None, Some(_)) => return Ordering::Less,
+                        (None, None) => return Ordering::Equal,
+                    }
+                }
+            }
+            (Value::Integer { str, .. }, Value::List(_)) => {
+                let self_as_list = Value::List(Values::new(str));
+                self_as_list.cmp(other)
+            }
+            (Value::List(_), Value::Integer { str, .. }) => {
+                let other_as_list = Value::List(Values::new(str));
+                self.cmp(&other_as_list)
+            }
         }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct Values<'a> {
+    value_list_str: &'a str,
+    start: usize,
+}
+
+impl<'a> Values<'a> {
+    fn new(value_list_str: &'a str) -> Self {
+        Self {
+            value_list_str,
+            start: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for Values<'a> {
+    type Item = Value<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.start == self.value_list_str.len() {
+            return None;
+        }
+        let mut level = 0;
+        for (end, b) in self.value_list_str[self.start..].bytes().enumerate() {
+            match b {
+                b',' if level == 0 => {
+                    let value =
+                        Value::new(&self.value_list_str[self.start..self.start + end]).unwrap();
+                    self.start += end + 1;
+                    return Some(value);
+                }
+                b'[' => level += 1,
+                b']' => level -= 1,
+                _ => {}
+            }
+        }
+        let value = Value::new(&self.value_list_str[self.start..]).unwrap();
+        self.start = self.value_list_str.len();
+        Some(value)
     }
 }
 
@@ -64,7 +107,7 @@ pub fn parse_input(input: &str) -> Vec<Value> {
             if line.is_empty() {
                 return None;
             }
-            Some(line.parse().unwrap())
+            Some(Value::new(line).unwrap())
         })
         .collect()
 }
@@ -78,12 +121,8 @@ pub fn part_one(packets: &[Value]) -> usize {
 }
 
 pub fn part_two(packets: &[Value]) -> usize {
-    let decoder_keys = [
-        Value::List(vec![Value::List(vec![Value::Integer(2)])]),
-        Value::List(vec![Value::List(vec![Value::Integer(6)])]),
-    ];
+    let decoder_keys = [Value::new("[[2]]").unwrap(), Value::new("[[6]]").unwrap()];
     let mut indices = [1, 2];
-    
     for p in packets {
         for (key, index) in decoder_keys.iter().zip(indices.iter_mut()) {
             if p < key {
