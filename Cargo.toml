@@ -135,15 +135,15 @@ name = "day_12"
 path = "src/day_12/bench.rs"
 harness = false
 
-# [[bin]]
-# name = "day_13"
-# path = "src/day_13/bin.rs"
-# test = false
+[[bin]]
+name = "day_13"
+path = "src/day_13/bin.rs"
+test = false
 
-# [[bench]]
-# name = "day_13"
-# path = "src/day_13/bench.rs"
-# harness = false
+[[bench]]
+name = "day_13"
+path = "src/day_13/bench.rs"
+harness = false
 
 # [[bin]]
 # name = "day_14"
