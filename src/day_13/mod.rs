@@ -61,14 +61,14 @@ impl<'a> Ord for Value<'a> {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Values<'a> {
     value_list_str: &'a str,
-    start: usize,
+    index: usize,
 }
 
 impl<'a> Values<'a> {
     fn new(value_list_str: &'a str) -> Self {
         Self {
             value_list_str,
-            start: 0,
+            index: 0,
         }
     }
 }
@@ -77,15 +77,15 @@ impl<'a> Iterator for Values<'a> {
     type Item = Value<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.start == self.value_list_str.len() {
+        if self.index == self.value_list_str.len() {
             return None;
         }
         let mut level = 0;
-        for (end, b) in self.value_list_str[self.start..].bytes().enumerate() {
+        for (end, b) in self.value_list_str[self.index..].bytes().enumerate() {
             match b {
                 b',' if level == 0 => {
-                    let value = Value::new(&self.value_list_str[self.start..self.start + end]);
-                    self.start += end + 1;
+                    let value = Value::new(&self.value_list_str[self.index..self.index + end]);
+                    self.index += end + 1;
                     return Some(value);
                 }
                 b'[' => level += 1,
@@ -93,8 +93,8 @@ impl<'a> Iterator for Values<'a> {
                 _ => {}
             }
         }
-        let value = Value::new(&self.value_list_str[self.start..]);
-        self.start = self.value_list_str.len();
+        let value = Value::new(&self.value_list_str[self.index..]);
+        self.index = self.value_list_str.len();
         Some(value)
     }
 }
