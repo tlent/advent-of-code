@@ -124,10 +124,11 @@ pub fn part_two(packets: &[Value]) -> usize {
     let decoder_keys = [Value::new("[[2]]").unwrap(), Value::new("[[6]]").unwrap()];
     let mut indices = [1, 2];
     for p in packets {
-        for (key, index) in decoder_keys.iter().zip(indices.iter_mut()) {
-            if p < key {
-                *index += 1;
-            }
+        if p < &decoder_keys[0] {
+            indices[0] += 1;
+            indices[1] += 1;
+        } else if p < &decoder_keys[1] {
+            indices[1] += 1;
         }
     }
     indices.iter().product()
