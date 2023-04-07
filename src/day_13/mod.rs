@@ -34,7 +34,7 @@ impl FromStr for Value {
             }
             let values = strs
                 .into_iter()
-                .map(|s| s.parse())
+                .map(str::parse)
                 .collect::<Result<_, _>>()?;
             Ok(Value::List(values))
         } else {
@@ -52,8 +52,8 @@ impl PartialOrd for Value {
 impl Ord for Value {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match (self, other) {
-            (Value::Integer(s), Value::Integer(o)) => s.cmp(&o),
-            (Value::List(s), Value::List(o)) => s.cmp(&o),
+            (Value::Integer(s), Value::Integer(o)) => s.cmp(o),
+            (Value::List(s), Value::List(o)) => s.cmp(o),
             (Value::Integer(_), Value::List(_)) => Value::List(vec![self.clone()]).cmp(other),
             (Value::List(_), Value::Integer(_)) => self.cmp(&Value::List(vec![other.clone()])),
         }
