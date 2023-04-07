@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, num::ParseIntError};
+use std::cmp::Ordering;
 
 pub const INPUT: &str = include_str!("input.txt");
 
@@ -9,15 +9,15 @@ pub enum Value<'a> {
 }
 
 impl<'a> Value<'a> {
-    fn new(s: &'a str) -> Result<Self, ParseIntError> {
-        Ok(if s.starts_with('[') && s.ends_with(']') {
+    fn new(s: &'a str) -> Self {
+        if s.starts_with('[') && s.ends_with(']') {
             Value::List(Values::new(&s[1..s.len() - 1]))
         } else {
             Value::Integer {
-                value: s.parse()?,
+                value: s.parse().unwrap(),
                 str: s,
             }
-        })
+        }
     }
 }
 
@@ -84,8 +84,7 @@ impl<'a> Iterator for Values<'a> {
         for (end, b) in self.value_list_str[self.start..].bytes().enumerate() {
             match b {
                 b',' if level == 0 => {
-                    let value =
-                        Value::new(&self.value_list_str[self.start..self.start + end]).unwrap();
+                    let value = Value::new(&self.value_list_str[self.start..self.start + end]);
                     self.start += end + 1;
                     return Some(value);
                 }
@@ -94,7 +93,7 @@ impl<'a> Iterator for Values<'a> {
                 _ => {}
             }
         }
-        let value = Value::new(&self.value_list_str[self.start..]).unwrap();
+        let value = Value::new(&self.value_list_str[self.start..]);
         self.start = self.value_list_str.len();
         Some(value)
     }
@@ -107,7 +106,7 @@ pub fn parse_input(input: &str) -> Vec<Value> {
             if line.is_empty() {
                 return None;
             }
-            Some(Value::new(line).unwrap())
+            Some(Value::new(line))
         })
         .collect()
 }
@@ -121,7 +120,7 @@ pub fn part_one(packets: &[Value]) -> usize {
 }
 
 pub fn part_two(packets: &[Value]) -> usize {
-    let decoder_keys = [Value::new("[[2]]").unwrap(), Value::new("[[6]]").unwrap()];
+    let decoder_keys = [Value::new("[[2]]"), Value::new("[[6]]")];
     let mut indices = [1, 2];
     for p in packets {
         if p < &decoder_keys[0] {
