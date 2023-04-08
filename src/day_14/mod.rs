@@ -1,5 +1,6 @@
-use crate::HashMap;
+use crate::{HashMap, HashSet};
 use std::cmp;
+use std::collections::VecDeque;
 use std::fmt::Display;
 use std::ops::RangeInclusive;
 
@@ -19,7 +20,6 @@ pub enum Material {
 pub struct World {
     map: HashMap<Point, Material>,
     rock_bounds: (RangeInclusive<usize>, RangeInclusive<usize>),
-    settled_sand_unit_count: usize,
 }
 
 impl World {
@@ -59,31 +59,6 @@ impl World {
         World {
             map,
             rock_bounds: (min_x..=max_x, min_y..=max_y),
-            settled_sand_unit_count: 0,
-        }
-    }
-
-    fn simulate_sand_falling<F1, F2>(&mut self, is_valid_position: F1, should_stop: F2)
-    where
-        F1: Fn(&World, Point) -> bool,
-        F2: Fn(&World, Point) -> bool,
-    {
-        loop {
-            let mut position = Point::default();
-            let mut next_position = Some(SPAWN_POINT);
-            while let Some(next) = next_position {
-                position = next;
-                if should_stop(self, position) {
-                    return;
-                }
-                let (x, y) = position;
-                let candidate_positions = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)];
-                next_position = candidate_positions
-                    .into_iter()
-                    .find(|&p| is_valid_position(self, p));
-            }
-            self.map.insert(position, Material::Sand);
-            self.settled_sand_unit_count += 1;
         }
     }
 
@@ -105,6 +80,7 @@ impl Display for World {
                 let c = match self.map.get(&(x, y)) {
                     Some(Material::Rock) => '#',
                     Some(Material::Sand) => 'o',
+                    None if (x, y) == SPAWN_POINT => '+',
                     None => '.',
                 };
                 write!(f, "{c}")?;
@@ -120,25 +96,63 @@ pub fn parse_input(input: &str) -> World {
 }
 
 pub fn part_one(world: &mut World) -> usize {
-    world.simulate_sand_falling(
-        |world, p| !world.map.contains_key(&p),
-        |world, (x, y)| {
-            let (x_bounds, y_bounds) = &world.rock_bounds;
-            !x_bounds.contains(&x) || !y_bounds.contains(&y)
-        },
-    );
-    world.settled_sand_unit_count
+    let (x_bounds, y_bounds) = &world.rock_bounds;
+    let mut settled_sand_unit_count = 0;
+    let mut stack = vec![SPAWN_POINT];
+    let mut seen = HashSet::default();
+    seen.insert(SPAWN_POINT);
+    while let Some(point @ (x, y)) = stack.pop() {
+        let next_points = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)];
+        if next_points
+            .iter()
+            .any(|(x, y)| !x_bounds.contains(&x) || !y_bounds.contains(&y))
+        {
+            break;
+        }
+        if next_points.iter().all(|p| world.map.contains_key(&p)) {
+            settled_sand_unit_count += 1;
+            world.map.insert(point, Material::Sand);
+            continue;
+        }
+        stack.push(point);
+        for point in next_points.into_iter().rev() {
+            if !world.map.contains_key(&point) && !seen.contains(&point) {
+                stack.push(point);
+                seen.insert(point);
+            }
+        }
+    }
+    settled_sand_unit_count
 }
 
 pub fn part_two(world: &mut World) -> usize {
-    world.simulate_sand_falling(
-        |world, (x, y)| {
-            let (_, y_bounds) = &world.rock_bounds;
-            !world.map.contains_key(&(x, y)) && y < *y_bounds.end() + 2
-        },
-        |world, _| world.map.contains_key(&SPAWN_POINT),
-    );
-    world.settled_sand_unit_count
+    let (_, y_bounds) = &world.rock_bounds;
+    let mut settled_sand_unit_count = 0;
+    let mut traversal = vec![SPAWN_POINT];
+    let mut queue = VecDeque::from([SPAWN_POINT]);
+    let mut seen = HashSet::default();
+    seen.insert(SPAWN_POINT);
+    while let Some((x, y)) = queue.pop_front() {
+        let next_points = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)];
+        for point @ (_x, y) in next_points {
+            if y != *y_bounds.end() + 2 && !world.map.contains_key(&point) && !seen.contains(&point)
+            {
+                traversal.push(point);
+                queue.push_back(point);
+                seen.insert(point);
+            }
+        }
+    }
+    for point @ (x, y) in traversal.into_iter().rev() {
+        let point_is_supported = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)]
+            .into_iter()
+            .all(|p @ (_x, y)| y == *y_bounds.end() + 2 || world.map.contains_key(&p));
+        if point_is_supported {
+            settled_sand_unit_count += 1;
+            world.map.insert(point, Material::Sand);
+        }
+    }
+    settled_sand_unit_count
 }
 
 #[cfg(test)]
