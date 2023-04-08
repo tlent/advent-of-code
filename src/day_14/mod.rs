@@ -1,6 +1,5 @@
 use crate::{HashMap, HashSet};
 use std::cmp;
-use std::collections::VecDeque;
 use std::fmt::Display;
 use std::ops::RangeInclusive;
 
@@ -117,10 +116,10 @@ pub fn part_one(world: &mut World) -> usize {
 pub fn part_two(world: &mut World) -> usize {
     let (_, y_bounds) = &world.rock_bounds;
     let mut settled_sand_unit_count = 0;
-    let mut queue = VecDeque::from([SPAWN_POINT]);
+    let mut stack = vec![SPAWN_POINT];
     let mut seen = HashSet::default();
     seen.insert(SPAWN_POINT);
-    while let Some(point @ (x, y)) = queue.pop_front() {
+    while let Some(point @ (x, y)) = stack.pop() {
         settled_sand_unit_count += 1;
         world.map.insert(point, Material::Sand);
         let next_points = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)];
@@ -129,7 +128,7 @@ pub fn part_two(world: &mut World) -> usize {
                 && !world.map.contains_key(&next_point)
                 && !seen.contains(&next_point)
             {
-                queue.push_back(next_point);
+                stack.push(next_point);
                 seen.insert(next_point);
             }
         }
