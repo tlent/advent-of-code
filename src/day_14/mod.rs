@@ -1,19 +1,18 @@
+use crate::HashMap;
 use std::cmp;
 use std::ops::RangeInclusive;
-
-use crate::HashMap;
 
 pub const INPUT: &str = include_str!("input.txt");
 
 const SPAWN_POINT: Point = (500, 0);
+
+type Point = (usize, usize);
 
 #[derive(Debug, Clone)]
 pub enum Material {
     Rock,
     Sand,
 }
-
-type Point = (usize, usize);
 
 #[derive(Debug, Clone)]
 pub struct World {
