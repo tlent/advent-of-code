@@ -111,3 +111,20 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_part_one() {
+        let mut world = parse_input(INPUT);
+        assert_eq!(part_one(&mut world), 683);
+    }
+
+    #[test]
+    fn test_part_two() {
+        let mut world = parse_input(INPUT);
+        assert_eq!(part_two(&mut world), 28_821);
+    }
+}
