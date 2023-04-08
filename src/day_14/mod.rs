@@ -1,5 +1,6 @@
 use crate::HashMap;
 use std::cmp;
+use std::fmt::Display;
 use std::ops::RangeInclusive;
 
 pub const INPUT: &str = include_str!("input.txt");
@@ -17,8 +18,7 @@ pub enum Material {
 #[derive(Debug, Clone)]
 pub struct World {
     map: HashMap<Point, Material>,
-    x_bounds: RangeInclusive<usize>,
-    y_bounds: RangeInclusive<usize>,
+    rock_bounds: (RangeInclusive<usize>, RangeInclusive<usize>),
     settled_sand_unit_count: usize,
 }
 
@@ -58,8 +58,7 @@ impl World {
         let max_y = cmp::max(0, *map.keys().map(|(_, y)| y).max().unwrap());
         World {
             map,
-            x_bounds: min_x..=max_x,
-            y_bounds: min_y..=max_y,
+            rock_bounds: (min_x..=max_x, min_y..=max_y),
             settled_sand_unit_count: 0,
         }
     }
@@ -87,6 +86,33 @@ impl World {
             self.settled_sand_unit_count += 1;
         }
     }
+
+    fn find_sand_bounds(&self) -> (RangeInclusive<usize>, RangeInclusive<usize>) {
+        let map = &self.map;
+        let min_x = cmp::min(500, *map.keys().map(|(x, _)| x).min().unwrap());
+        let max_x = cmp::max(500, *map.keys().map(|(x, _)| x).max().unwrap());
+        let min_y = cmp::min(0, *map.keys().map(|(_, y)| y).min().unwrap());
+        let max_y = cmp::max(0, *map.keys().map(|(_, y)| y).max().unwrap());
+        (min_x..=max_x, min_y..=max_y)
+    }
+}
+
+impl Display for World {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (x_bounds, y_bounds) = self.find_sand_bounds();
+        for y in y_bounds.clone() {
+            for x in x_bounds.clone() {
+                let c = match self.map.get(&(x, y)) {
+                    Some(Material::Rock) => '#',
+                    Some(Material::Sand) => 'o',
+                    None => '.',
+                };
+                write!(f, "{c}")?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
+    }
 }
 
 pub fn parse_input(input: &str) -> World {
@@ -96,14 +122,20 @@ pub fn parse_input(input: &str) -> World {
 pub fn part_one(world: &mut World) -> usize {
     world.simulate_sand_falling(
         |world, p| !world.map.contains_key(&p),
-        |world, (x, y)| !world.x_bounds.contains(&x) || !world.y_bounds.contains(&y),
+        |world, (x, y)| {
+            let (x_bounds, y_bounds) = &world.rock_bounds;
+            !x_bounds.contains(&x) || !y_bounds.contains(&y)
+        },
     );
     world.settled_sand_unit_count
 }
 
 pub fn part_two(world: &mut World) -> usize {
     world.simulate_sand_falling(
-        |world, (x, y)| !world.map.contains_key(&(x, y)) && y < *world.y_bounds.end() + 2,
+        |world, (x, y)| {
+            let (_, y_bounds) = &world.rock_bounds;
+            !world.map.contains_key(&(x, y)) && y < *y_bounds.end() + 2
+        },
         |world, _| world.map.contains_key(&SPAWN_POINT),
     );
     world.settled_sand_unit_count
