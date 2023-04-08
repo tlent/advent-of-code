@@ -128,28 +128,21 @@ pub fn part_one(world: &mut World) -> usize {
 pub fn part_two(world: &mut World) -> usize {
     let (_, y_bounds) = &world.rock_bounds;
     let mut settled_sand_unit_count = 0;
-    let mut traversal = vec![SPAWN_POINT];
     let mut queue = VecDeque::from([SPAWN_POINT]);
     let mut seen = HashSet::default();
     seen.insert(SPAWN_POINT);
-    while let Some((x, y)) = queue.pop_front() {
+    while let Some(point @ (x, y)) = queue.pop_front() {
+        settled_sand_unit_count += 1;
+        world.map.insert(point, Material::Sand);
         let next_points = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)];
-        for point @ (_x, y) in next_points {
-            if y != *y_bounds.end() + 2 && !world.map.contains_key(&point) && !seen.contains(&point)
+        for next_point @ (_x, y) in next_points {
+            if y != *y_bounds.end() + 2
+                && !world.map.contains_key(&next_point)
+                && !seen.contains(&next_point)
             {
-                traversal.push(point);
-                queue.push_back(point);
-                seen.insert(point);
+                queue.push_back(next_point);
+                seen.insert(next_point);
             }
-        }
-    }
-    for point @ (x, y) in traversal.into_iter().rev() {
-        let point_is_supported = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)]
-            .into_iter()
-            .all(|p @ (_x, y)| y == *y_bounds.end() + 2 || world.map.contains_key(&p));
-        if point_is_supported {
-            settled_sand_unit_count += 1;
-            world.map.insert(point, Material::Sand);
         }
     }
     settled_sand_unit_count
