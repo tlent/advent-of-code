@@ -52,23 +52,12 @@ impl World {
                 }
             }
         }
-        let min_x = cmp::min(500, *map.keys().map(|(x, _)| x).min().unwrap());
-        let max_x = cmp::max(500, *map.keys().map(|(x, _)| x).max().unwrap());
-        let min_y = cmp::min(0, *map.keys().map(|(_, y)| y).min().unwrap());
-        let max_y = cmp::max(0, *map.keys().map(|(_, y)| y).max().unwrap());
-        World {
-            map,
-            rock_bounds: (min_x..=max_x, min_y..=max_y),
-        }
+        let rock_bounds = find_map_bounds(&map);
+        World { map, rock_bounds }
     }
 
     fn find_sand_bounds(&self) -> (RangeInclusive<usize>, RangeInclusive<usize>) {
-        let map = &self.map;
-        let min_x = cmp::min(500, *map.keys().map(|(x, _)| x).min().unwrap());
-        let max_x = cmp::max(500, *map.keys().map(|(x, _)| x).max().unwrap());
-        let min_y = cmp::min(0, *map.keys().map(|(_, y)| y).min().unwrap());
-        let max_y = cmp::max(0, *map.keys().map(|(_, y)| y).max().unwrap());
-        (min_x..=max_x, min_y..=max_y)
+        find_map_bounds(&self.map)
     }
 }
 
@@ -146,6 +135,15 @@ pub fn part_two(world: &mut World) -> usize {
         }
     }
     settled_sand_unit_count
+}
+
+fn find_map_bounds<T>(map: &HashMap<Point, T>) -> (RangeInclusive<usize>, RangeInclusive<usize>) {
+    let (spawn_x, spawn_y) = SPAWN_POINT;
+    let min_x = cmp::min(spawn_x, *map.keys().map(|(x, _)| x).min().unwrap());
+    let max_x = cmp::max(spawn_x, *map.keys().map(|(x, _)| x).max().unwrap());
+    let min_y = cmp::min(spawn_y, *map.keys().map(|(_, y)| y).min().unwrap());
+    let max_y = cmp::max(spawn_y, *map.keys().map(|(_, y)| y).max().unwrap());
+    (min_x..=max_x, min_y..=max_y)
 }
 
 #[cfg(test)]
