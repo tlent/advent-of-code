@@ -24,16 +24,15 @@ pub struct World {
 impl World {
     fn from_input(input: &str) -> Self {
         let mut map = HashMap::default();
+        let mut points = vec![];
         for line in input.lines() {
-            let points: Vec<_> = line
-                .split(" -> ")
-                .map(|point_str| {
-                    let (left, right) = point_str.split_once(',').unwrap();
-                    let x: usize = left.parse().unwrap();
-                    let y: usize = right.parse().unwrap();
-                    (x, y)
-                })
-                .collect();
+            points.clear();
+            points.extend(line.split(" -> ").map(|point_str| {
+                let (left, right) = point_str.split_once(',').unwrap();
+                let x: usize = left.parse().unwrap();
+                let y: usize = right.parse().unwrap();
+                (x, y)
+            }));
             for (&(left_x, left_y), &(right_x, right_y)) in points.iter().zip(points.iter().skip(1))
             {
                 if left_x == right_x {
