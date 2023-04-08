@@ -62,7 +62,7 @@ impl World {
 impl Display for World {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let (x_bounds, y_bounds) = self.find_sand_bounds();
-        for y in y_bounds.clone() {
+        for y in y_bounds {
             for x in x_bounds.clone() {
                 let c = match self.map.get(&(x, y)) {
                     Some(Material::Rock) => '#',
@@ -92,11 +92,11 @@ pub fn part_one(world: &mut World) -> usize {
         let next_points = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)];
         if next_points
             .iter()
-            .any(|(x, y)| !x_bounds.contains(&x) || !y_bounds.contains(&y))
+            .any(|(x, y)| !x_bounds.contains(x) || !y_bounds.contains(y))
         {
             break;
         }
-        if next_points.iter().all(|p| world.map.contains_key(&p)) {
+        if next_points.iter().all(|p| world.map.contains_key(p)) {
             settled_sand_unit_count += 1;
             world.map.insert(point, Material::Sand);
             continue;
