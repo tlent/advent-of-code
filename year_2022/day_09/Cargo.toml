@@ -12,5 +12,6 @@ rustc-hash.workspace = true
 criterion.workspace = true
 
 [[bench]]
-name = "bench"
+name = "day_09"
+path = "src/bench.rs"
 harness = false
