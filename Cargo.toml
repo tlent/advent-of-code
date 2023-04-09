@@ -1,5 +1,5 @@
 [workspace]
-members = ["2022/*"]
+members = ["year_2022/*"]
 
 [workspace.package]
 version = "0.1.0"
