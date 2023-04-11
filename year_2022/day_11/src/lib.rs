@@ -1,7 +1,4 @@
-use std::{
-    cell::RefCell,
-    collections::{btree_map::Entry, BTreeMap},
-};
+use std::collections::{btree_map::Entry, BTreeMap};
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -27,9 +24,7 @@ pub struct Test {
     false_destination: usize,
 }
 
-// RefCell is necessary for the `round()` function to move items
-// from one monkey's `held_items` to another monkey's `held_items`
-type Monkeys = Vec<RefCell<Monkey>>;
+type Monkeys = Vec<Monkey>;
 
 pub fn parse_input(input: &str) -> Monkeys {
     input
@@ -51,7 +46,7 @@ pub fn parse_input(input: &str) -> Monkeys {
             let divisor = iter.next().unwrap()[21..].parse().unwrap();
             let true_destination = iter.next().unwrap()[29..].parse().unwrap();
             let false_destination = iter.next().unwrap()[30..].parse().unwrap();
-            RefCell::new(Monkey {
+            Monkey {
                 held_items,
                 inspection_count: 0,
                 operation,
@@ -60,7 +55,7 @@ pub fn parse_input(input: &str) -> Monkeys {
                     true_destination,
                     false_destination,
                 },
-            })
+            }
         })
         .collect()
 }
@@ -77,7 +72,7 @@ pub fn part_two(monkeys: &mut Monkeys) -> usize {
     const ROUNDS: usize = 10_000;
     let test_divisors_product = monkeys
         .iter()
-        .map(|monkey| monkey.borrow().test.divisor)
+        .map(|monkey| monkey.test.divisor)
         .product::<usize>();
     let mut seen = BTreeMap::default();
     let mut previous_inspection_counts = vec![];
@@ -85,7 +80,7 @@ pub fn part_two(monkeys: &mut Monkeys) -> usize {
         previous_inspection_counts.push(get_inspection_counts(monkeys));
         let monkeys_held_items = monkeys
             .iter()
-            .map(|m| m.borrow().held_items.clone())
+            .map(|m| m.held_items.clone())
             .collect::<Vec<_>>();
         match seen.entry(monkeys_held_items) {
             Entry::Vacant(v) => v.insert(round_number),
@@ -102,7 +97,7 @@ pub fn part_two(monkeys: &mut Monkeys) -> usize {
                 for (i, monkey) in monkeys.iter_mut().enumerate() {
                     let cycle_increment = cycle_end_counts[i] - cycle_start_counts[i];
                     let remainder_increment = remainder_counts[i] - cycle_start_counts[i];
-                    monkey.get_mut().inspection_count +=
+                    monkey.inspection_count +=
                         cycle_increment * remaining_cycles + remainder_increment;
                 }
                 break;
@@ -117,8 +112,8 @@ fn round<F>(monkeys: &mut Monkeys, map_operation_result: F)
 where
     F: Fn(usize) -> usize,
 {
-    for monkey_refcell in monkeys.iter() {
-        let mut monkey = monkey_refcell.borrow_mut();
+    for monkey_id in 0..monkeys.len() {
+        let monkey = &mut monkeys[monkey_id];
         monkey.inspection_count += monkey.held_items.len();
         let Test {
             divisor,
@@ -126,7 +121,7 @@ where
             false_destination,
         } = monkey.test;
         let operation = monkey.operation;
-        for item in monkey.held_items.drain(..) {
+        while let Some(item) = monkeys[monkey_id].held_items.pop() {
             let result = map_operation_result(match operation {
                 Operation::Add(n) => item + n,
                 Operation::Multiply(n) => item * n,
@@ -137,7 +132,7 @@ where
             } else {
                 false_destination
             };
-            monkeys[destination].borrow_mut().held_items.push(result);
+            monkeys[destination].held_items.push(result);
         }
     }
 }
@@ -149,10 +144,7 @@ fn monkey_business_level(monkeys: &Monkeys) -> usize {
 }
 
 fn get_inspection_counts(monkeys: &Monkeys) -> Vec<usize> {
-    monkeys
-        .iter()
-        .map(|m| m.borrow().inspection_count)
-        .collect()
+    monkeys.iter().map(|m| m.inspection_count).collect()
 }
 
 #[cfg(test)]
