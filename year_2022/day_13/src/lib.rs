@@ -89,7 +89,7 @@ impl<'a> Iterator for Values<'a> {
                 _ => {}
             }
         }
-        let value = Value::new(&self.value_list_str);
+        let value = Value::new(self.value_list_str);
         self.value_list_str = "";
         Some(value)
     }
