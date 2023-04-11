@@ -87,9 +87,12 @@ pub mod parser {
     };
 
     pub fn parse(input: &str) -> Result<Vec<Sensor>> {
-        let (_, sensors) = sensors(input)
+        let (rest, sensors) = sensors(input)
             .finish()
             .map_err(|err| anyhow!(err.to_string()))?;
+        if !rest.is_empty() {
+            return Err(anyhow!("Unparsed input: {}", rest));
+        }
         Ok(sensors)
     }
 
