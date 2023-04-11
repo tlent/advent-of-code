@@ -80,7 +80,7 @@ pub mod parser {
     use nom::{
         bytes::complete::tag,
         character::complete::{i32, line_ending},
-        combinator::{map, opt},
+        combinator::map,
         multi::many0,
         sequence::{preceded, separated_pair, terminated},
         Finish, IResult,
@@ -108,7 +108,7 @@ pub mod parser {
                     tag(": closest beacon is at "),
                     coordinate,
                 ),
-                opt(line_ending),
+                line_ending,
             ),
             |(position, nearest_beacon_position)| {
                 let nearest_beacon_distance = manhattan_distance(position, nearest_beacon_position);
