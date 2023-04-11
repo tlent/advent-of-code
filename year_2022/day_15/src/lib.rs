@@ -1,59 +1,24 @@
-use rayon::prelude::*;
+use rustc_hash::FxHashSet;
 use std::{cmp, ops::RangeInclusive};
 
 pub const INPUT: &str = include_str!("../input.txt");
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub struct Position {
-    x: i32,
-    y: i32,
-}
-
-impl Position {
-    fn manhattan_distance(self, other: Position) -> i32 {
-        (self.x - other.x).abs() + (self.y - other.y).abs()
-    }
-}
+type Coordinate = (i32, i32);
 
 #[derive(Debug)]
 pub struct Sensor {
-    position: Position,
+    position: Coordinate,
     nearest_beacon_distance: i32,
 }
 
 pub fn part_one(sensors: &[Sensor]) -> i32 {
-    find_covered_ranges_by_row(sensors, 2_000_000)
-        .into_iter()
-        .map(|r| r.end() - r.start())
-        .sum()
-}
-
-pub fn part_two(sensors: &[Sensor]) -> usize {
-    const MAX_ROW: i32 = 4_000_000;
-    (0..=MAX_ROW)
-        .into_par_iter()
-        .find_map_any(|y| {
-            let ranges = find_covered_ranges_by_row(sensors, y);
-            if !ranges
-                .iter()
-                .any(|r| *r.start() <= 0 && *r.end() >= MAX_ROW)
-            {
-                let x = (ranges[0].end() + 1) as usize;
-                Some(x * MAX_ROW as usize + y as usize)
-            } else {
-                None
-            }
-        })
-        .unwrap()
-}
-
-fn find_covered_ranges_by_row(sensors: &[Sensor], row: i32) -> Vec<RangeInclusive<i32>> {
+    const ROW: i32 = 2_000_000;
     let mut ranges = sensors
         .iter()
         .filter_map(|sensor| {
-            let Position { x, y } = sensor.position;
+            let (x, y) = sensor.position;
             let max_distance = sensor.nearest_beacon_distance;
-            let dy = (y - row).abs();
+            let dy = (y - ROW).abs();
             if dy > max_distance {
                 return None;
             }
@@ -62,8 +27,9 @@ fn find_covered_ranges_by_row(sensors: &[Sensor], row: i32) -> Vec<RangeInclusiv
         })
         .collect::<Vec<_>>();
     ranges.sort_by_key(|r| *r.start());
-    let mut merged_ranges = vec![ranges[0].clone()];
-    for range in ranges.into_iter().skip(1) {
+    let mut iter = ranges.into_iter();
+    let mut merged_ranges = vec![iter.next().unwrap()];
+    for range in iter {
         let last_range = merged_ranges.last_mut().unwrap();
         if range.start() <= last_range.end() {
             *last_range = *last_range.start()..=cmp::max(*last_range.end(), *range.end());
@@ -71,7 +37,41 @@ fn find_covered_ranges_by_row(sensors: &[Sensor], row: i32) -> Vec<RangeInclusiv
             merged_ranges.push(range);
         }
     }
-    merged_ranges
+    merged_ranges.into_iter().map(|r| r.end() - r.start()).sum()
+}
+
+pub fn part_two(sensors: &[Sensor]) -> usize {
+    const BOUNDS: RangeInclusive<i32> = 0..=4_000_000;
+    let mut ascending_line_coefficients = FxHashSet::default();
+    let mut descending_line_coefficients = FxHashSet::default();
+    for sensor in sensors {
+        let (x, y) = sensor.position;
+        let radius = sensor.nearest_beacon_distance;
+        ascending_line_coefficients.extend([y - x + radius + 1, y - x - radius - 1]);
+        descending_line_coefficients.extend([x + y + radius + 1, x + y - radius - 1]);
+    }
+    ascending_line_coefficients
+        .into_iter()
+        .find_map(|ascending_coefficient| {
+            for &descending_coefficient in &descending_line_coefficients {
+                let x = (descending_coefficient - ascending_coefficient) / 2;
+                let y = (ascending_coefficient + descending_coefficient) / 2;
+                if BOUNDS.contains(&x)
+                    && BOUNDS.contains(&y)
+                    && sensors.iter().all(|sensor| {
+                        manhattan_distance(sensor.position, (x, y)) > sensor.nearest_beacon_distance
+                    })
+                {
+                    return Some(x as usize * 4_000_000 + y as usize);
+                }
+            }
+            None
+        })
+        .unwrap()
+}
+
+fn manhattan_distance((left_x, left_y): Coordinate, (right_x, right_y): Coordinate) -> i32 {
+    (left_x - right_x).abs() + (left_y - right_y).abs()
 }
 
 pub mod parser {
@@ -93,25 +93,22 @@ pub mod parser {
         Ok(sensors)
     }
 
-    fn position(input: &str) -> IResult<&str, Position> {
-        map(
-            separated_pair(preceded(tag("x="), i32), tag(", y="), i32),
-            |(x, y)| Position { x, y },
-        )(input)
+    fn coordinate(input: &str) -> IResult<&str, Coordinate> {
+        separated_pair(preceded(tag("x="), i32), tag(", y="), i32)(input)
     }
 
     fn sensor(input: &str) -> IResult<&str, Sensor> {
         map(
             terminated(
                 separated_pair(
-                    preceded(tag("Sensor at "), position),
+                    preceded(tag("Sensor at "), coordinate),
                     tag(": closest beacon is at "),
-                    position,
+                    coordinate,
                 ),
                 opt(line_ending),
             ),
             |(position, nearest_beacon_position)| {
-                let nearest_beacon_distance = position.manhattan_distance(nearest_beacon_position);
+                let nearest_beacon_distance = manhattan_distance(position, nearest_beacon_position);
                 Sensor {
                     position,
                     nearest_beacon_distance,
