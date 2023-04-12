@@ -1,8 +1,8 @@
-use day_04::{self, INPUT};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use day_04::{self, INPUT};
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let pairs = day_04::parse_input(INPUT);
+    let pairs = day_04::parse_input(INPUT).unwrap();
 
     c.bench_function("day_04::parse_input", |b| {
         b.iter(|| day_04::parse_input(black_box(INPUT)));
