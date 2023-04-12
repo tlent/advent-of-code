@@ -4,15 +4,13 @@ pub const INPUT: &str = include_str!("../input.txt");
 
 type ParseResult = Result<Vec<(RangeInclusive<u8>, RangeInclusive<u8>)>, ParseIntError>;
 pub fn parse_input(input: &str) -> ParseResult {
-    let numbers = input
-        .trim()
-        .split(['\n', ',', '-'])
-        .map(str::parse::<u8>)
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(numbers
+    let parts = input.trim().split(['\n', ',', '-']);
+    let numbers = parts.map(str::parse::<u8>).collect::<Result<Vec<_>, _>>()?;
+    let ranges = numbers
         .chunks_exact(4)
         .map(|chunk| (chunk[0]..=chunk[1], chunk[2]..=chunk[3]))
-        .collect())
+        .collect();
+    Ok(ranges)
 }
 
 pub fn part_one(pairs: &[(RangeInclusive<u8>, RangeInclusive<u8>)]) -> usize {

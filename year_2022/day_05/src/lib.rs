@@ -35,19 +35,18 @@ fn parse_stacks(stacks_str: &str) -> Vec<Vec<u8>> {
 }
 
 pub fn parse_moves(moves_str: &str) -> Result<Vec<Move>, ParseIntError> {
-    let mut moves = vec![];
-    let mut chunk = [0; 3];
-    for (i, part) in moves_str.split(['\n', ' ']).skip(1).step_by(2).enumerate() {
-        let value = part.parse::<usize>()?;
-        chunk[i % 3] = value;
-        if i % 3 == 2 {
-            moves.push(Move {
-                count: chunk[0],
-                source_index: chunk[1] - 1,
-                destination_index: chunk[2] - 1,
-            });
-        }
-    }
+    let parts = moves_str.trim().split(['\n', ' ']).skip(1).step_by(2);
+    let numbers = parts
+        .map(str::parse::<usize>)
+        .collect::<Result<Vec<_>, _>>()?;
+    let moves = numbers
+        .chunks_exact(3)
+        .map(|chunk| Move {
+            count: chunk[0],
+            source_index: chunk[1] - 1,
+            destination_index: chunk[2] - 1,
+        })
+        .collect();
     Ok(moves)
 }
 
