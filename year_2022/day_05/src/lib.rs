@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, num::ParseIntError};
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -9,40 +9,46 @@ pub struct Move {
     pub destination_index: usize,
 }
 
-pub fn parse_input(input: &str) -> (Vec<Vec<u8>>, Vec<Move>) {
+pub fn parse_input(input: &str) -> Result<(Vec<Vec<u8>>, Vec<Move>), ParseIntError> {
     let (stacks_str, moves_str) = input.split_once("\n\n").unwrap();
-    let stack_lines: Vec<_> = stacks_str
-        .lines()
-        .rev()
-        .skip(1)
-        .map(str::as_bytes)
-        .collect();
-    let stack_line_len = stack_lines[0].len();
-    let stacks = (1..stack_line_len)
-        .step_by(4)
-        .map(|index| {
-            stack_lines
-                .iter()
-                .map(|line| line[index])
-                .filter(|&byte| byte != b' ')
-                .collect()
-        })
-        .collect();
-    let moves = moves_str
-        .lines()
-        .map(|line| {
-            let mut parts = line.split_ascii_whitespace();
-            let count = parts.nth(1).unwrap().parse().unwrap();
-            let source: usize = parts.nth(1).unwrap().parse().unwrap();
-            let destination: usize = parts.nth(1).unwrap().parse().unwrap();
-            Move {
-                count,
-                source_index: source - 1,
-                destination_index: destination - 1,
+    let stacks = parse_stacks(stacks_str);
+    let moves = parse_moves(moves_str)?;
+    Ok((stacks, moves))
+}
+
+fn parse_stacks(stacks_str: &str) -> Vec<Vec<u8>> {
+    let mut lines_iter = stacks_str.lines().peekable();
+    let line_len = lines_iter.peek().unwrap().len();
+    // 4 bytes per "[X] ", +1 because no space at end of line
+    let stack_count = (line_len + 1) / 4;
+    let mut stacks = vec![vec![]; stack_count];
+    for line in lines_iter {
+        for (i, stack) in stacks.iter_mut().enumerate() {
+            let byte = line.as_bytes()[i * 4 + 1];
+            if byte.is_ascii_uppercase() {
+                stack.push(byte);
             }
-        })
-        .collect();
-    (stacks, moves)
+        }
+    }
+    stacks.iter_mut().for_each(|stack| stack.reverse());
+    stacks
+}
+
+pub fn parse_moves(moves_str: &str) -> Result<Vec<Move>, ParseIntError> {
+    let mut moves = vec![];
+    let mut chunk = [0; 3];
+    for (i, part) in moves_str.split(['\n', ' ']).skip(1).step_by(2).enumerate() {
+        let value = part.parse::<usize>()?;
+        chunk[i % 3] = value;
+        if i % 3 == 2 {
+            moves.push(Move {
+                count: chunk[0],
+                source_index: chunk[1] - 1,
+                destination_index: chunk[2] - 1,
+            });
+        }
+    }
+    Ok(moves)
 }
 
 pub fn part_one(mut stacks: Vec<Vec<u8>>, moves: &[Move]) -> String {
@@ -94,13 +100,13 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        let (stacks, moves) = parse_input(INPUT);
+        let (stacks, moves) = parse_input(INPUT).unwrap();
         assert_eq!(part_one(stacks, &moves), "PSNRGBTFT");
     }
 
     #[test]
     fn test_part_two() {
-        let (stacks, moves) = parse_input(INPUT);
+        let (stacks, moves) = parse_input(INPUT).unwrap();
         assert_eq!(part_two(stacks, &moves), "BNTZFPMMW");
     }
 }

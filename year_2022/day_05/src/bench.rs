@@ -1,8 +1,8 @@
-use day_05::{self, INPUT};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use day_05::{self, INPUT};
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let (stacks, moves) = day_05::parse_input(INPUT);
+    let (stacks, moves) = day_05::parse_input(INPUT).unwrap();
 
     c.bench_function("day_05::parse_input", |b| {
         b.iter(|| day_05::parse_input(black_box(INPUT)));
