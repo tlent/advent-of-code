@@ -1,11 +1,11 @@
-use day_01::{self, INPUT};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use day_01::{self, INPUT};
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let group_sums = day_01::parse_input(INPUT);
+    let group_sums = day_01::parser::parse(INPUT).unwrap();
 
-    c.bench_function("day_01::parse_input", |b| {
-        b.iter(|| day_01::parse_input(black_box(INPUT)));
+    c.bench_function("day_01::parser::parse", |b| {
+        b.iter(|| day_01::parser::parse(black_box(INPUT)));
     });
 
     c.bench_function("day_01::solve", |b| {
