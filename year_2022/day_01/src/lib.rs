@@ -1,8 +1,8 @@
+use std::num::ParseIntError;
+
 pub const INPUT: &str = include_str!("../input.txt");
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-
-pub fn parse_input(input: &str) -> Result<Vec<u32>> {
+pub fn parse_input(input: &str) -> Result<Vec<u32>, ParseIntError> {
     let mut sums = vec![];
     let mut sum = 0;
     for line in input.lines() {
