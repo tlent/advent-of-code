@@ -1,0 +1,28 @@
+pub const INPUT: &str = include_str!("../input.txt");
+
+pub fn parse_input(input: &str) -> () {
+    todo!()
+}
+
+pub fn part_one() -> () {
+    todo!()
+}
+
+pub fn part_two() -> () {
+    todo!()
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_part_one() {
+      todo!()
+    }
+
+    #[test]
+    fn test_part_two() {
+        todo!()
+    }
+}

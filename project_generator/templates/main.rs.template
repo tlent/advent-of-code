@@ -1,0 +1,9 @@
+use {{ day }}::{self, INPUT};
+
+fn main() {
+    let parse_result = {{ day }}::parse_input(INPUT);
+    let part_one = {{ day }}::part_one(&parse_result);
+    println!("{part_one}");
+    let part_two = {{ day }}::part_two(&parse_result);
+    println!("{part_two}");
+}

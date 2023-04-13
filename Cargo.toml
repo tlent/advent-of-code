@@ -1,5 +1,8 @@
 [workspace]
-members = ["year_2022/*"]
+members = [
+  "project_generator",
+  "year_2022/*"
+]
 
 [workspace.package]
 version = "0.1.0"
