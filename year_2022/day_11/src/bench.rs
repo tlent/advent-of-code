@@ -1,11 +1,11 @@
-use day_11::{self, INPUT};
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
+use day_11::{self, INPUT};
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let monkeys = day_11::parse_input(INPUT);
+    let monkeys = day_11::parser::parse(INPUT).unwrap();
 
     c.bench_function("day_11::parse_input", |b| {
-        b.iter(|| day_11::parse_input(black_box(INPUT)));
+        b.iter(|| day_11::parser::parse(black_box(INPUT)).unwrap());
     });
 
     c.bench_function("day_11::part_one", |b| {
