@@ -12,9 +12,10 @@ pub struct HeightMap {
 
 impl HeightMap {
     fn from_input(input: &str) -> Self {
-        let width = input.lines().next().unwrap().len();
-        let height = input.lines().count();
-        let bytes = input.lines().flat_map(str::bytes).collect::<Vec<_>>();
+        let lines = input.lines().collect::<Vec<_>>();
+        let width = lines[0].len();
+        let height = lines.len();
+        let bytes = lines.into_iter().flat_map(str::bytes).collect::<Vec<_>>();
         let initial_position = bytes.iter().position(|&b| b == b'S').unwrap();
         let target_position = bytes.iter().position(|&b| b == b'E').unwrap();
         let heights = bytes
