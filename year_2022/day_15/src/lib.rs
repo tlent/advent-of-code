@@ -101,23 +101,20 @@ pub mod parser {
     }
 
     fn sensor(input: &str) -> IResult<&str, Sensor> {
-        map(
-            terminated(
-                separated_pair(
-                    preceded(tag("Sensor at "), coordinate),
-                    tag(": closest beacon is at "),
-                    coordinate,
-                ),
-                line_ending,
-            ),
-            |(position, nearest_beacon_position)| {
-                let nearest_beacon_distance = manhattan_distance(position, nearest_beacon_position);
-                Sensor {
-                    position,
-                    nearest_beacon_distance,
-                }
-            },
-        )(input)
+        let positions = separated_pair(
+            preceded(tag("Sensor at "), coordinate),
+            tag(": closest beacon is at "),
+            coordinate,
+        );
+        let line = terminated(positions, line_ending);
+        let map_fn = |(position, nearest_beacon_position)| {
+            let nearest_beacon_distance = manhattan_distance(position, nearest_beacon_position);
+            Sensor {
+                position,
+                nearest_beacon_distance,
+            }
+        };
+        map(line, map_fn)(input)
     }
 
     fn sensors(input: &str) -> IResult<&str, Vec<Sensor>> {
