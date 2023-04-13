@@ -13,6 +13,7 @@ pub fn parse_input(input: &str) -> Result<Vec<u32>, ParseIntError> {
             sum += line.parse::<u32>()?;
         }
     }
+    sums.push(sum);
     Ok(sums)
 }
 
