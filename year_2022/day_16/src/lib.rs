@@ -1,4 +1,6 @@
-use rustc_hash::FxHashMap as HashMap;
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
+use std::cmp;
+use std::rc::Rc;
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -11,16 +13,73 @@ pub struct Valve {
 type Valves = HashMap<String, Valve>;
 
 pub fn part_one(valves: &Valves) -> u32 {
-    let start_valve = &valves["AA"];
-    f(valves, start_valve, 30)
+    let distances = find_all_pairs_shortest_paths(valves);
+    let releasable_valve_ids = Rc::new(
+        valves
+            .iter()
+            .filter(|(_, valve)| valve.flow_rate > 0)
+            .map(|(id, _)| id.as_str())
+            .collect::<HashSet<_>>(),
+    );
+    let mut max_released_pressure = 0;
+    let mut stack = vec![("AA", releasable_valve_ids, 0, 30)];
+    while let Some((position, mut releasable, released_pressure, remaining_minutes)) = stack.pop() {
+        Rc::make_mut(&mut releasable).remove(position);
+        let mut is_solution = true;
+        for &id in releasable.iter() {
+            let distance = distances[&(position, id)];
+            let minutes_to_release = distance + 1;
+            if remaining_minutes > minutes_to_release {
+                let new_remaining_minutes = remaining_minutes - minutes_to_release;
+                let new_released_pressure =
+                    released_pressure + new_remaining_minutes * valves[id].flow_rate;
+                stack.push((
+                    id,
+                    releasable.clone(),
+                    new_released_pressure,
+                    new_remaining_minutes,
+                ));
+                is_solution = false;
+            }
+        }
+        if is_solution {
+            max_released_pressure = cmp::max(max_released_pressure, released_pressure);
+        }
+    }
+    max_released_pressure
 }
 
-fn f(valves: &Valves, current_valve: &Valve, remaining_minutes: u32) -> u32 {
-    if remaining_minutes == 0 {
-        return 0;
+// Floyd-Warshall algorithm
+// https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
+pub fn find_all_pairs_shortest_paths(valves: &Valves) -> HashMap<(&str, &str), u32> {
+    let mut distances = HashMap::default();
+    for (valve_id, valve) in valves {
+        distances.insert((valve_id.as_str(), valve_id.as_str()), 0);
+        for tunnel_id in valve.tunnel_ids.iter() {
+            distances.insert((valve_id.as_str(), tunnel_id.as_str()), 1);
+        }
     }
-    let next_valves = current_valve.tunnel_ids.iter().map(|id| &valves[id]);
-    todo!()
+    let valve_strs = valves.keys().map(String::as_str).collect::<Vec<_>>();
+    for &v in valve_strs.iter() {
+        for &source in valve_strs.iter() {
+            for &destination in valve_strs.iter() {
+                let prev_distance = distances.get(&(source, destination)).copied();
+                let new_distance = distances
+                    .get(&(source, v))
+                    .and_then(|d| distances.get(&(v, destination)).map(|dd| d + dd));
+                match (prev_distance, new_distance) {
+                    (None, Some(new)) => {
+                        distances.insert((source, destination), new);
+                    }
+                    (Some(old), Some(new)) if new < old => {
+                        distances.insert((source, destination), new);
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    distances
 }
 
 pub fn part_two() -> () {
@@ -113,7 +172,8 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        todo!()
+        let valves = parser::parse(INPUT).unwrap();
+        assert_eq!(part_one(&valves), 2320);
     }
 
     #[test]
