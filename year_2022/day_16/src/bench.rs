@@ -12,9 +12,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| day_16::part_one(black_box(&parse_result)));
     });
 
-    // c.bench_function("day_16::part_two", |b| {
-    //     b.iter(|| day_16::part_two(black_box(&parse_result)));
-    // });
+    c.bench_function("day_16::part_two", |b| {
+        b.iter(|| day_16::part_two(black_box(&parse_result)));
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);

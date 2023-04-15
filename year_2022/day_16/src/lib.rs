@@ -13,6 +13,12 @@ pub struct Valve {
 type Valves = HashMap<String, Valve>;
 
 pub fn part_one(valves: &Valves) -> u32 {
+    struct State<'a> {
+        position: &'a str,
+        remaining_minutes: u32,
+        releasable_valve_ids: Rc<HashSet<&'a str>>,
+        released_pressure: u32,
+    }
     let distances = find_all_pairs_shortest_paths(valves);
     let releasable_valve_ids = Rc::new(
         valves
@@ -22,28 +28,109 @@ pub fn part_one(valves: &Valves) -> u32 {
             .collect::<HashSet<_>>(),
     );
     let mut max_released_pressure = 0;
-    let mut stack = vec![("AA", releasable_valve_ids, 0, 30)];
-    while let Some((position, mut releasable, released_pressure, remaining_minutes)) = stack.pop() {
-        Rc::make_mut(&mut releasable).remove(position);
+    let initial_state = State {
+        position: "AA",
+        remaining_minutes: 30,
+        releasable_valve_ids,
+        released_pressure: 0,
+    };
+    let mut stack = vec![initial_state];
+    while let Some(mut state) = stack.pop() {
         let mut is_solution = true;
-        for &id in releasable.iter() {
-            let distance = distances[&(position, id)];
+        Rc::make_mut(&mut state.releasable_valve_ids).remove(state.position);
+        for &id in state.releasable_valve_ids.iter() {
+            let distance = distances[&(state.position, id)];
             let minutes_to_release = distance + 1;
-            if remaining_minutes > minutes_to_release {
-                let new_remaining_minutes = remaining_minutes - minutes_to_release;
-                let new_released_pressure =
-                    released_pressure + new_remaining_minutes * valves[id].flow_rate;
-                stack.push((
-                    id,
-                    releasable.clone(),
-                    new_released_pressure,
-                    new_remaining_minutes,
-                ));
+            if state.remaining_minutes > minutes_to_release {
+                let remaining_minutes = state.remaining_minutes - minutes_to_release;
+                let released_pressure =
+                    state.released_pressure + remaining_minutes * valves[id].flow_rate;
+                let next_state = State {
+                    position: id,
+                    remaining_minutes,
+                    releasable_valve_ids: Rc::clone(&state.releasable_valve_ids),
+                    released_pressure,
+                };
+                stack.push(next_state);
                 is_solution = false;
             }
         }
         if is_solution {
-            max_released_pressure = cmp::max(max_released_pressure, released_pressure);
+            max_released_pressure = cmp::max(max_released_pressure, state.released_pressure);
+        }
+    }
+    max_released_pressure
+}
+
+pub fn part_two(valves: &Valves) -> u32 {
+    struct State<'a> {
+        own_position: &'a str,
+        own_remaining_minutes: u32,
+        elephant_position: &'a str,
+        elephant_remaining_minutes: u32,
+        releasable_valve_ids: Rc<HashSet<&'a str>>,
+        released_pressure: u32,
+    }
+    let distances = find_all_pairs_shortest_paths(valves);
+    let releasable_valve_ids = Rc::new(
+        valves
+            .iter()
+            .filter(|(_, valve)| valve.flow_rate > 0)
+            .map(|(id, _)| id.as_str())
+            .collect::<HashSet<_>>(),
+    );
+    let mut max_released_pressure = 0;
+    let initial_state = State {
+        own_position: "AA",
+        own_remaining_minutes: 26,
+        elephant_position: "AA",
+        elephant_remaining_minutes: 26,
+        releasable_valve_ids,
+        released_pressure: 0,
+    };
+    let mut stack = vec![initial_state];
+    while let Some(mut state) = stack.pop() {
+        let mut is_solution = true;
+        Rc::make_mut(&mut state.releasable_valve_ids).remove(state.own_position);
+        Rc::make_mut(&mut state.releasable_valve_ids).remove(state.elephant_position);
+        for &id in state.releasable_valve_ids.iter() {
+            let distance = distances[&(state.own_position, id)];
+            let minutes_to_release = distance + 1;
+            if state.own_remaining_minutes > minutes_to_release {
+                let remaining_minutes = state.own_remaining_minutes - minutes_to_release;
+                let released_pressure =
+                    state.released_pressure + remaining_minutes * valves[id].flow_rate;
+                let next_state = State {
+                    own_position: id,
+                    own_remaining_minutes: remaining_minutes,
+                    elephant_position: state.elephant_position,
+                    elephant_remaining_minutes: state.elephant_remaining_minutes,
+                    releasable_valve_ids: Rc::clone(&state.releasable_valve_ids),
+                    released_pressure,
+                };
+                stack.push(next_state);
+                is_solution = false;
+            }
+            let distance = distances[&(state.elephant_position, id)];
+            let minutes_to_release = distance + 1;
+            if state.elephant_remaining_minutes > minutes_to_release {
+                let remaining_minutes = state.elephant_remaining_minutes - minutes_to_release;
+                let released_pressure =
+                    state.released_pressure + remaining_minutes * valves[id].flow_rate;
+                let next_state = State {
+                    own_position: state.own_position,
+                    own_remaining_minutes: state.own_remaining_minutes,
+                    elephant_position: id,
+                    elephant_remaining_minutes: remaining_minutes,
+                    releasable_valve_ids: Rc::clone(&state.releasable_valve_ids),
+                    released_pressure,
+                };
+                stack.push(next_state);
+                is_solution = false;
+            }
+        }
+        if is_solution {
+            max_released_pressure = cmp::max(max_released_pressure, state.released_pressure);
         }
     }
     max_released_pressure
@@ -51,6 +138,7 @@ pub fn part_one(valves: &Valves) -> u32 {
 
 // Floyd-Warshall algorithm
 // https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
+// This could be replaced with BFS from each valve to every other valve to make it O(v^2 + ve)
 pub fn find_all_pairs_shortest_paths(valves: &Valves) -> HashMap<(&str, &str), u32> {
     let mut distances = HashMap::default();
     for (valve_id, valve) in valves {
@@ -80,10 +168,6 @@ pub fn find_all_pairs_shortest_paths(valves: &Valves) -> HashMap<(&str, &str), u
         }
     }
     distances
-}
-
-pub fn part_two() -> () {
-    todo!()
 }
 
 pub mod parser {
