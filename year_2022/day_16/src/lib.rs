@@ -35,7 +35,7 @@ pub mod parser {
         bytes::complete::{tag, take},
         character::complete::{line_ending, u32},
         combinator::{iterator, map},
-        multi::{many0, separated_list1},
+        multi::separated_list1,
         sequence::{preceded, terminated, Tuple},
         Finish, IResult,
     };
