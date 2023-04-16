@@ -110,23 +110,24 @@ pub fn part_two(valves: &Valves) -> u32 {
                 };
                 stack.push(next_state);
                 is_solution = false;
-            }
-            let distance = distances[&(state.elephant_position, id)];
-            let minutes_to_release = distance + 1;
-            if state.elephant_remaining_minutes > minutes_to_release {
-                let remaining_minutes = state.elephant_remaining_minutes - minutes_to_release;
-                let released_pressure =
-                    state.released_pressure + remaining_minutes * valves[id].flow_rate;
-                let next_state = State {
-                    own_position: state.own_position,
-                    own_remaining_minutes: state.own_remaining_minutes,
-                    elephant_position: id,
-                    elephant_remaining_minutes: remaining_minutes,
-                    releasable_valve_ids: Rc::clone(&state.releasable_valve_ids),
-                    released_pressure,
-                };
-                stack.push(next_state);
-                is_solution = false;
+            } else {
+                let distance = distances[&(state.elephant_position, id)];
+                let minutes_to_release = distance + 1;
+                if state.elephant_remaining_minutes > minutes_to_release {
+                    let remaining_minutes = state.elephant_remaining_minutes - minutes_to_release;
+                    let released_pressure =
+                        state.released_pressure + remaining_minutes * valves[id].flow_rate;
+                    let next_state = State {
+                        own_position: state.own_position,
+                        own_remaining_minutes: state.own_remaining_minutes,
+                        elephant_position: id,
+                        elephant_remaining_minutes: remaining_minutes,
+                        releasable_valve_ids: Rc::clone(&state.releasable_valve_ids),
+                        released_pressure,
+                    };
+                    stack.push(next_state);
+                    is_solution = false;
+                }
             }
         }
         if is_solution {
