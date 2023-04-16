@@ -262,6 +262,7 @@ mod test {
 
     #[test]
     fn test_part_two() {
-        todo!()
+        let valves = parser::parse(INPUT).unwrap();
+        assert_eq!(part_two(&valves), 2967);
     }
 }
