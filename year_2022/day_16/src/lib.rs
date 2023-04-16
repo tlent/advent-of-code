@@ -138,7 +138,6 @@ pub fn part_two(valves: &Valves) -> u32 {
 
 // Floyd-Warshall algorithm
 // https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
-// This could be replaced with BFS from each valve to every other valve to make it O(v^2 + ve)
 pub fn find_all_pairs_shortest_paths(valves: &Valves) -> HashMap<(&str, &str), u32> {
     let mut distances = HashMap::default();
     for (valve_id, valve) in valves {
