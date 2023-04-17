@@ -78,7 +78,7 @@ impl<'a> Iterator for Solutions<'a> {
     }
 }
 
-pub fn part_one(valves: &Valves) -> u32 {
+pub fn preprocess(valves: &Valves) -> (Distances, Rc<HashSet<&str>>) {
     let distances = find_all_pairs_shortest_paths(valves);
     let releasable_valve_ids = Rc::new(
         valves
@@ -87,26 +87,30 @@ pub fn part_one(valves: &Valves) -> u32 {
             .map(|(id, _)| id.as_str())
             .collect::<HashSet<_>>(),
     );
-    Solutions::new(valves, &distances, releasable_valve_ids, 30)
+    (distances, releasable_valve_ids)
+}
+
+pub fn part_one(
+    valves: &Valves,
+    distances: &Distances,
+    releasable_valve_ids: Rc<HashSet<&str>>,
+) -> u32 {
+    Solutions::new(valves, distances, releasable_valve_ids, 30)
         .map(|(pressure_released, _)| pressure_released)
         .max()
         .unwrap()
 }
 
-pub fn part_two(valves: &Valves) -> u32 {
-    let distances = find_all_pairs_shortest_paths(valves);
-    let releasable_valve_ids = Rc::new(
-        valves
-            .iter()
-            .filter(|(_, valve)| valve.flow_rate > 0)
-            .map(|(id, _)| id.as_str())
-            .collect::<HashSet<_>>(),
-    );
-    let own_solutions = Solutions::new(valves, &distances, releasable_valve_ids, 26);
+pub fn part_two(
+    valves: &Valves,
+    distances: &Distances,
+    releasable_valve_ids: Rc<HashSet<&str>>,
+) -> u32 {
+    let own_solutions = Solutions::new(valves, distances, releasable_valve_ids, 26);
     own_solutions
         .map(|(own_pressure, remaining_releasable_valve_ids)| {
             let elephant_solutions =
-                Solutions::new(valves, &distances, remaining_releasable_valve_ids, 26);
+                Solutions::new(valves, distances, remaining_releasable_valve_ids, 26);
             let elephant_pressure = elephant_solutions.map(|(p, _)| p).max();
             elephant_pressure.map(|p| p + own_pressure)
         })
@@ -235,12 +239,14 @@ mod test {
     #[test]
     fn test_part_one() {
         let valves = parser::parse(INPUT).unwrap();
-        assert_eq!(part_one(&valves), 2320);
+        let (distances, releasable_valve_ids) = preprocess(&valves);
+        assert_eq!(part_one(&valves, &distances, releasable_valve_ids), 2320);
     }
 
     #[test]
     fn test_part_two() {
         let valves = parser::parse(INPUT).unwrap();
-        assert_eq!(part_two(&valves), 2967);
+        let (distances, releasable_valve_ids) = preprocess(&valves);
+        assert_eq!(part_two(&valves, &distances, releasable_valve_ids), 2967);
     }
 }
