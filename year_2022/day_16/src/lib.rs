@@ -1,5 +1,5 @@
 use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
-use std::rc::Rc;
+use std::cmp::{self, Reverse};
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -15,7 +15,8 @@ type Distances<'a> = HashMap<(&'a str, &'a str), u32>;
 struct State<'a> {
     position: &'a str,
     remaining_minutes: u32,
-    releasable_valve_ids: Rc<HashSet<&'a str>>,
+    releasable_valve_ids: HashSet<&'a str>,
+    released_valve_ids: HashSet<&'a str>,
     released_pressure: u32,
 }
 
@@ -28,14 +29,15 @@ struct Solutions<'a> {
 impl<'a> Solutions<'a> {
     fn new(
         valves: &'a Valves,
+        releasable_valve_ids: &'a HashSet<&'a str>,
         distances: &'a Distances,
-        releasable_valve_ids: Rc<HashSet<&'a str>>,
         time_limit: u32,
     ) -> Self {
         let initial_state = State {
             position: "AA",
             remaining_minutes: time_limit,
-            releasable_valve_ids,
+            releasable_valve_ids: releasable_valve_ids.clone(),
+            released_valve_ids: HashSet::default(),
             released_pressure: 0,
         };
         Self {
@@ -47,12 +49,11 @@ impl<'a> Solutions<'a> {
 }
 
 impl<'a> Iterator for Solutions<'a> {
-    type Item = (u32, Rc<HashSet<&'a str>>);
+    type Item = (u32, HashSet<&'a str>);
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(mut state) = self.stack.pop() {
+        while let Some(state) = self.stack.pop() {
             let mut is_solution = true;
-            Rc::make_mut(&mut state.releasable_valve_ids).remove(state.position);
             for &id in state.releasable_valve_ids.iter() {
                 let distance = self.distances[&(state.position, id)];
                 let minutes_to_release = distance + 1;
@@ -60,10 +61,15 @@ impl<'a> Iterator for Solutions<'a> {
                     let remaining_minutes = state.remaining_minutes - minutes_to_release;
                     let released_pressure =
                         state.released_pressure + remaining_minutes * self.valves[id].flow_rate;
+                    let mut released_valve_ids = state.released_valve_ids.clone();
+                    released_valve_ids.insert(id);
+                    let mut releasable_valve_ids = state.releasable_valve_ids.clone();
+                    releasable_valve_ids.remove(id);
                     let next_state = State {
                         position: id,
                         remaining_minutes,
-                        releasable_valve_ids: Rc::clone(&state.releasable_valve_ids),
+                        releasable_valve_ids,
+                        released_valve_ids,
                         released_pressure,
                     };
                     self.stack.push(next_state);
@@ -71,31 +77,29 @@ impl<'a> Iterator for Solutions<'a> {
                 }
             }
             if is_solution {
-                return Some((state.released_pressure, state.releasable_valve_ids));
+                return Some((state.released_pressure, state.released_valve_ids));
             }
         }
         None
     }
 }
 
-pub fn preprocess(valves: &Valves) -> (Distances, Rc<HashSet<&str>>) {
+pub fn preprocess(valves: &Valves) -> (Distances, HashSet<&str>) {
     let distances = find_all_pairs_shortest_paths(valves);
-    let releasable_valve_ids = Rc::new(
-        valves
-            .iter()
-            .filter(|(_, valve)| valve.flow_rate > 0)
-            .map(|(id, _)| id.as_str())
-            .collect::<HashSet<_>>(),
-    );
+    let releasable_valve_ids = valves
+        .iter()
+        .filter(|(_, valve)| valve.flow_rate > 0)
+        .map(|(id, _)| id.as_str())
+        .collect::<HashSet<_>>();
     (distances, releasable_valve_ids)
 }
 
 pub fn part_one(
     valves: &Valves,
     distances: &Distances,
-    releasable_valve_ids: Rc<HashSet<&str>>,
+    releasable_valve_ids: &HashSet<&str>,
 ) -> u32 {
-    Solutions::new(valves, distances, releasable_valve_ids, 30)
+    Solutions::new(valves, releasable_valve_ids, distances, 30)
         .map(|(pressure_released, _)| pressure_released)
         .max()
         .unwrap()
@@ -104,19 +108,24 @@ pub fn part_one(
 pub fn part_two(
     valves: &Valves,
     distances: &Distances,
-    releasable_valve_ids: Rc<HashSet<&str>>,
+    releasable_valve_ids: &HashSet<&str>,
 ) -> u32 {
-    let own_solutions = Solutions::new(valves, distances, releasable_valve_ids, 26);
-    own_solutions
-        .map(|(own_pressure, remaining_releasable_valve_ids)| {
-            let elephant_solutions =
-                Solutions::new(valves, distances, remaining_releasable_valve_ids, 26);
-            let elephant_pressure = elephant_solutions.map(|(p, _)| p).max();
-            elephant_pressure.map(|p| p + own_pressure)
-        })
-        .max()
-        .flatten()
-        .unwrap()
+    let mut solutions =
+        Solutions::new(valves, releasable_valve_ids, distances, 26).collect::<Vec<_>>();
+    solutions.sort_by_key(|(pressure_released, _)| Reverse(*pressure_released));
+    let mut max = 0;
+    for (i, (own_pressure, own_valves)) in solutions.iter().enumerate() {
+        let total_pressure = &solutions[i + 1..]
+            .iter()
+            .map(|(p, valves)| (p + own_pressure, valves))
+            .take_while(|(p, _)| *p > max)
+            .find(|(_, valves)| own_valves.is_disjoint(valves))
+            .map(|(p, _)| p);
+        if let Some(p) = total_pressure {
+            max = cmp::max(max, *p);
+        }
+    }
+    max
 }
 
 // Floyd-Warshall algorithm
@@ -240,13 +249,13 @@ mod test {
     fn test_part_one() {
         let valves = parser::parse(INPUT).unwrap();
         let (distances, releasable_valve_ids) = preprocess(&valves);
-        assert_eq!(part_one(&valves, &distances, releasable_valve_ids), 2320);
+        assert_eq!(part_one(&valves, &distances, &releasable_valve_ids), 2320);
     }
 
     #[test]
     fn test_part_two() {
         let valves = parser::parse(INPUT).unwrap();
         let (distances, releasable_valve_ids) = preprocess(&valves);
-        assert_eq!(part_two(&valves, &distances, releasable_valve_ids), 2967);
+        assert_eq!(part_two(&valves, &distances, &releasable_valve_ids), 2967);
     }
 }
