@@ -1,5 +1,5 @@
 use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
-use std::cmp::{self, Reverse};
+use std::cmp;
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -16,7 +16,6 @@ struct State<'a> {
     position: &'a str,
     remaining_minutes: u32,
     releasable_valve_ids: HashSet<&'a str>,
-    released_valve_ids: HashSet<&'a str>,
     released_pressure: u32,
 }
 
@@ -24,6 +23,7 @@ struct Solutions<'a> {
     valves: &'a Valves,
     distances: &'a Distances<'a>,
     stack: Vec<State<'a>>,
+    current_best: u32,
 }
 
 impl<'a> Solutions<'a> {
@@ -37,13 +37,13 @@ impl<'a> Solutions<'a> {
             position: "AA",
             remaining_minutes: time_limit,
             releasable_valve_ids: releasable_valve_ids.clone(),
-            released_valve_ids: HashSet::default(),
             released_pressure: 0,
         };
         Self {
             valves,
             distances,
             stack: vec![initial_state],
+            current_best: 0,
         }
     }
 }
@@ -53,6 +53,21 @@ impl<'a> Iterator for Solutions<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(state) = self.stack.pop() {
+            let mut releasable_valve_flow_rates = state
+                .releasable_valve_ids
+                .iter()
+                .map(|&id| self.valves[id].flow_rate)
+                .collect::<Vec<_>>();
+            releasable_valve_flow_rates.sort_unstable();
+            let release_times = (0..=state.remaining_minutes).rev().step_by(2).skip(1);
+            let max_remaining_pressure_release = release_times
+                .zip(releasable_valve_flow_rates.iter().rev())
+                .map(|(t, f)| t * f)
+                .sum::<u32>();
+            let upper_bound = state.released_pressure + max_remaining_pressure_release;
+            if upper_bound <= self.current_best {
+                continue;
+            }
             let mut is_solution = true;
             for &id in state.releasable_valve_ids.iter() {
                 let distance = self.distances[&(state.position, id)];
@@ -61,15 +76,12 @@ impl<'a> Iterator for Solutions<'a> {
                     let remaining_minutes = state.remaining_minutes - minutes_to_release;
                     let released_pressure =
                         state.released_pressure + remaining_minutes * self.valves[id].flow_rate;
-                    let mut released_valve_ids = state.released_valve_ids.clone();
-                    released_valve_ids.insert(id);
                     let mut releasable_valve_ids = state.releasable_valve_ids.clone();
                     releasable_valve_ids.remove(id);
                     let next_state = State {
                         position: id,
                         remaining_minutes,
                         releasable_valve_ids,
-                        released_valve_ids,
                         released_pressure,
                     };
                     self.stack.push(next_state);
@@ -77,7 +89,8 @@ impl<'a> Iterator for Solutions<'a> {
                 }
             }
             if is_solution {
-                return Some((state.released_pressure, state.released_valve_ids));
+                self.current_best = cmp::max(self.current_best, state.released_pressure);
+                return Some((state.released_pressure, state.releasable_valve_ids));
             }
         }
         None
@@ -110,22 +123,16 @@ pub fn part_two(
     distances: &Distances,
     releasable_valve_ids: &HashSet<&str>,
 ) -> u32 {
-    let mut solutions =
-        Solutions::new(valves, releasable_valve_ids, distances, 26).collect::<Vec<_>>();
-    solutions.sort_by_key(|(pressure_released, _)| Reverse(*pressure_released));
-    let mut max = 0;
-    for (i, (own_pressure, own_valves)) in solutions.iter().enumerate() {
-        let total_pressure = &solutions[i + 1..]
-            .iter()
-            .map(|(p, valves)| (p + own_pressure, valves))
-            .take_while(|(p, _)| *p > max)
-            .find(|(_, valves)| own_valves.is_disjoint(valves))
-            .map(|(p, _)| p);
-        if let Some(p) = total_pressure {
-            max = cmp::max(max, *p);
-        }
-    }
-    max
+    Solutions::new(valves, releasable_valve_ids, distances, 26)
+        .map(|(own_pressue, remaining_releasable_valve_ids)| {
+            own_pressue
+                + Solutions::new(valves, &remaining_releasable_valve_ids, distances, 26)
+                    .map(|(elephant_pressure, _)| elephant_pressure)
+                    .max()
+                    .unwrap()
+        })
+        .max()
+        .unwrap()
 }
 
 // Floyd-Warshall algorithm
