@@ -12,21 +12,6 @@ pub struct Valve {
 type Valves = HashMap<String, Valve>;
 type Distances<'a> = HashMap<(&'a str, &'a str), u32>;
 
-pub fn part_one(valves: &Valves) -> u32 {
-    let distances = find_all_pairs_shortest_paths(valves);
-    let releasable_valve_ids = Rc::new(
-        valves
-            .iter()
-            .filter(|(_, valve)| valve.flow_rate > 0)
-            .map(|(id, _)| id.as_str())
-            .collect::<HashSet<_>>(),
-    );
-    Solutions::new(valves, &distances, releasable_valve_ids, 30)
-        .map(|(pressure_released, _)| pressure_released)
-        .max()
-        .unwrap()
-}
-
 struct State<'a> {
     position: &'a str,
     remaining_minutes: u32,
@@ -91,6 +76,21 @@ impl<'a> Iterator for Solutions<'a> {
         }
         None
     }
+}
+
+pub fn part_one(valves: &Valves) -> u32 {
+    let distances = find_all_pairs_shortest_paths(valves);
+    let releasable_valve_ids = Rc::new(
+        valves
+            .iter()
+            .filter(|(_, valve)| valve.flow_rate > 0)
+            .map(|(id, _)| id.as_str())
+            .collect::<HashSet<_>>(),
+    );
+    Solutions::new(valves, &distances, releasable_valve_ids, 30)
+        .map(|(pressure_released, _)| pressure_released)
+        .max()
+        .unwrap()
 }
 
 pub fn part_two(valves: &Valves) -> u32 {
