@@ -10,6 +10,87 @@ type Valves = Vec<(String, u32, Vec<String>)>;
 
 type ProcessedValves = Vec<(u32, Vec<u32>)>;
 
+pub fn preprocess(mut valves: Valves) -> (ProcessedValves, Vec<u32>) {
+    valves.sort_by_key(|&(_, flow_rate, _)| Reverse(flow_rate));
+    let distances = find_all_pairs_shortest_paths(&valves);
+    let valves_with_flow = valves
+        .iter()
+        .map(|&(_, flow_rate, _)| flow_rate)
+        .take_while(|&flow_rate| flow_rate > 0)
+        .enumerate()
+        .collect::<Vec<_>>();
+    let valves_with_flow_count = valves_with_flow.len();
+    let initial_distances = valves
+        .iter()
+        .position(|(id, _, _)| id == "AA")
+        .map(|i| distances[i][..valves_with_flow_count].to_vec())
+        .unwrap();
+    let processed_valves = valves_with_flow
+        .into_iter()
+        .map(|(i, flow_rate)| {
+            let distances = distances[i][..valves_with_flow_count].to_vec();
+            (flow_rate, distances)
+        })
+        .collect();
+    (processed_valves, initial_distances)
+}
+
+pub fn part_one(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
+    let unreleased_valve_ids = (0..valves.len()).collect();
+    Solutions::new(valves, initial_distances, unreleased_valve_ids, 30)
+        .map(|(pressure_released, _)| pressure_released)
+        .max()
+        .unwrap()
+}
+
+pub fn part_two(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
+    let unreleased_valve_ids = (0..valves.len()).collect();
+    Solutions::new(valves, initial_distances, unreleased_valve_ids, 26)
+        .map(|(own_pressue, remaining_unreleased_valve_ids)| {
+            let elephant_pressure = Solutions::new(
+                valves,
+                initial_distances,
+                remaining_unreleased_valve_ids,
+                26,
+            )
+            .map(|(elephant_pressure, _)| elephant_pressure)
+            .max()
+            .unwrap();
+            own_pressue + elephant_pressure
+        })
+        .max()
+        .unwrap()
+}
+
+// Floyd-Warshall algorithm
+// https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
+fn find_all_pairs_shortest_paths(valves: &[(String, u32, Vec<String>)]) -> Vec<Vec<u32>> {
+    let id_to_index = valves
+        .iter()
+        .enumerate()
+        .map(|(i, (id, _, _))| (id.as_str(), i))
+        .collect::<HashMap<_, _>>();
+    let mut distances = vec![vec![u32::MAX; valves.len()]; valves.len()];
+    for (i, (_, _, tunnel_ids)) in valves.iter().enumerate() {
+        distances[i][i] = 0;
+        for tunnel_id in tunnel_ids {
+            let j = id_to_index[tunnel_id.as_str()];
+            distances[i][j] = 1;
+        }
+    }
+    for k in 0..valves.len() {
+        for i in 0..valves.len() {
+            for j in 0..valves.len() {
+                distances[i][j] = cmp::min(
+                    distances[i][j],
+                    distances[i][k].saturating_add(distances[k][j]),
+                );
+            }
+        }
+    }
+    distances
+}
+
 struct State<'a> {
     distances: &'a [u32],
     remaining_minutes: u32,
@@ -88,87 +169,6 @@ impl<'a> Iterator for Solutions<'a> {
         }
         None
     }
-}
-
-pub fn preprocess(mut valves: Valves) -> (ProcessedValves, Vec<u32>) {
-    valves.sort_by_key(|&(_, flow_rate, _)| Reverse(flow_rate));
-    let distances = find_all_pairs_shortest_paths(&valves);
-    let valves_with_flow = valves
-        .iter()
-        .map(|&(_, flow_rate, _)| flow_rate)
-        .take_while(|&flow_rate| flow_rate > 0)
-        .enumerate()
-        .collect::<Vec<_>>();
-    let valves_with_flow_count = valves_with_flow.len();
-    let initial_distances = valves
-        .iter()
-        .position(|(id, _, _)| id == "AA")
-        .map(|i| distances[i][..valves_with_flow_count].to_vec())
-        .unwrap();
-    let processed_valves = valves_with_flow
-        .into_iter()
-        .map(|(i, flow_rate)| {
-            let distances = distances[i][..valves_with_flow_count].to_vec();
-            (flow_rate, distances)
-        })
-        .collect();
-    (processed_valves, initial_distances)
-}
-
-pub fn part_one(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
-    let unreleased_valve_ids = (0..valves.len()).collect();
-    Solutions::new(valves, initial_distances, unreleased_valve_ids, 30)
-        .map(|(pressure_released, _)| pressure_released)
-        .max()
-        .unwrap()
-}
-
-pub fn part_two(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
-    let unreleased_valve_ids = (0..valves.len()).collect();
-    Solutions::new(valves, initial_distances, unreleased_valve_ids, 26)
-        .map(|(own_pressue, remaining_unreleased_valve_ids)| {
-            own_pressue
-                + Solutions::new(
-                    valves,
-                    initial_distances,
-                    remaining_unreleased_valve_ids,
-                    26,
-                )
-                .map(|(elephant_pressure, _)| elephant_pressure)
-                .max()
-                .unwrap()
-        })
-        .max()
-        .unwrap()
-}
-
-// Floyd-Warshall algorithm
-// https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
-pub fn find_all_pairs_shortest_paths(valves: &[(String, u32, Vec<String>)]) -> Vec<Vec<u32>> {
-    let id_to_index = valves
-        .iter()
-        .enumerate()
-        .map(|(i, (id, _, _))| (id.as_str(), i))
-        .collect::<HashMap<_, _>>();
-    let mut distances = vec![vec![u32::MAX; valves.len()]; valves.len()];
-    for (i, (_, _, tunnel_ids)) in valves.iter().enumerate() {
-        distances[i][i] = 0;
-        for tunnel_id in tunnel_ids {
-            let j = id_to_index[tunnel_id.as_str()];
-            distances[i][j] = 1;
-        }
-    }
-    for k in 0..valves.len() {
-        for i in 0..valves.len() {
-            for j in 0..valves.len() {
-                distances[i][j] = cmp::min(
-                    distances[i][j],
-                    distances[i][k].saturating_add(distances[k][j]),
-                );
-            }
-        }
-    }
-    distances
 }
 
 pub mod parser {
