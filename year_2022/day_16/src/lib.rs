@@ -4,12 +4,17 @@ use std::cmp::{self, Reverse};
 
 pub const INPUT: &str = include_str!("../input.txt");
 
-type Valves = Vec<(String, u32, Vec<String>)>;
+type Valve = (String, u32, Vec<String>);
 
-type ProcessedValves = Vec<(u32, Vec<u32>)>;
+type ProcessedValve = (u32, Vec<u32>);
 
-pub fn preprocess(mut valves: Valves) -> (ProcessedValves, Vec<u32>) {
+pub fn preprocess(mut valves: Vec<Valve>) -> (Vec<ProcessedValve>, Vec<u32>) {
+    // Sort the valves by flow rate in descending order.
+    // Valves with lower indices have higher flow rates.
+    // The Solutions iterator's upper bound calculation
+    // relies on this
     valves.sort_by_key(|&(_, flow_rate, _)| Reverse(flow_rate));
+
     let distances = find_all_pairs_shortest_paths(&valves);
     let valves_with_flow = valves
         .iter()
@@ -18,11 +23,14 @@ pub fn preprocess(mut valves: Valves) -> (ProcessedValves, Vec<u32>) {
         .enumerate()
         .collect::<Vec<_>>();
     let valves_with_flow_count = valves_with_flow.len();
+
+    // Distances from the starting point to each valve
     let initial_distances = valves
         .iter()
         .position(|(id, _, _)| id == "AA")
         .map(|i| distances[i][..valves_with_flow_count].to_vec())
         .unwrap();
+
     let processed_valves = valves_with_flow
         .into_iter()
         .map(|(i, flow_rate)| {
@@ -33,7 +41,7 @@ pub fn preprocess(mut valves: Valves) -> (ProcessedValves, Vec<u32>) {
     (processed_valves, initial_distances)
 }
 
-pub fn part_one(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
+pub fn part_one(valves: &[ProcessedValve], initial_distances: &[u32]) -> u32 {
     let unreleased_valve_ids = bitvec![1; valves.len()];
     Solutions::new(valves, initial_distances, unreleased_valve_ids, 30)
         .map(|(pressure_released, _)| pressure_released)
@@ -41,7 +49,7 @@ pub fn part_one(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
         .unwrap()
 }
 
-pub fn part_two(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
+pub fn part_two(valves: &[ProcessedValve], initial_distances: &[u32]) -> u32 {
     let unreleased_valve_ids = bitvec![1; valves.len()];
     Solutions::new(valves, initial_distances, unreleased_valve_ids, 26)
         .map(|(own_pressue, remaining_unreleased_valve_ids)| {
@@ -62,17 +70,17 @@ pub fn part_two(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
 
 // Floyd-Warshall algorithm
 // https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
-fn find_all_pairs_shortest_paths(valves: &[(String, u32, Vec<String>)]) -> Vec<Vec<u32>> {
+fn find_all_pairs_shortest_paths(valves: &[Valve]) -> Vec<Vec<u32>> {
     let id_to_index = valves
         .iter()
         .enumerate()
-        .map(|(i, (id, _, _))| (id.as_str(), i))
+        .map(|(i, (id, _, _))| (id, i))
         .collect::<HashMap<_, _>>();
     let mut distances = vec![vec![u32::MAX; valves.len()]; valves.len()];
     for (i, (_, _, tunnel_ids)) in valves.iter().enumerate() {
         distances[i][i] = 0;
         for tunnel_id in tunnel_ids {
-            let j = id_to_index[tunnel_id.as_str()];
+            let j = id_to_index[tunnel_id];
             distances[i][j] = 1;
         }
     }
@@ -89,6 +97,23 @@ fn find_all_pairs_shortest_paths(valves: &[(String, u32, Vec<String>)]) -> Vec<V
     distances
 }
 
+/// Iterator over possible solutions to opening valves
+/// within the time limit.
+/// Iterates over tuples of:
+///   - the pressure released by opening valves in this
+///     order
+///   - the set of IDs of valves that were not released
+///
+/// This iterator does not include every possible solution
+/// because it uses an upper bound to prune partial
+/// solutions that are guaranteed to be worse than the best
+/// solution found so far in terms of pressure released.
+struct Solutions<'a> {
+    valves: &'a [ProcessedValve],
+    stack: Vec<State<'a>>,
+    current_best: u32,
+}
+
 struct State<'a> {
     distances: &'a [u32],
     remaining_minutes: u32,
@@ -96,15 +121,9 @@ struct State<'a> {
     released_pressure: u32,
 }
 
-struct Solutions<'a> {
-    valves: &'a ProcessedValves,
-    stack: Vec<State<'a>>,
-    current_best: u32,
-}
-
 impl<'a> Solutions<'a> {
     fn new(
-        valves: &'a ProcessedValves,
+        valves: &'a [ProcessedValve],
         initial_distances: &'a [u32],
         unreleased_valve_ids: BitVec,
         time_limit: u32,
@@ -128,16 +147,7 @@ impl<'a> Iterator for Solutions<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(state) = self.stack.pop() {
-            let release_times = (0..=state.remaining_minutes).rev().step_by(2).skip(1);
-            let flow_rates = state
-                .unreleased_valve_ids
-                .iter_ones()
-                .map(|id| self.valves[id].0);
-            let max_remaining_pressure_release = release_times
-                .zip(flow_rates)
-                .map(|(t, f)| t * f)
-                .sum::<u32>();
-            let upper_bound = state.released_pressure + max_remaining_pressure_release;
+            let upper_bound = calculate_remaining_pressure_upper_bound(self.valves, &state);
             if upper_bound <= self.current_best {
                 continue;
             }
@@ -169,20 +179,35 @@ impl<'a> Iterator for Solutions<'a> {
     }
 }
 
+fn calculate_remaining_pressure_upper_bound(valves: &[ProcessedValve], state: &State) -> u32 {
+    let release_times = (0..=state.remaining_minutes).rev().step_by(2).skip(1);
+    // flow_rates are sorted in descending order because
+    // valves were sorted in the preprocess function
+    let flow_rates = state
+        .unreleased_valve_ids
+        .iter_ones()
+        .map(|id| valves[id].0);
+    let max_remaining_pressure_release = release_times
+        .zip(flow_rates)
+        .map(|(t, f)| t * f)
+        .sum::<u32>();
+    state.released_pressure + max_remaining_pressure_release
+}
+
 pub mod parser {
-    use super::Valves;
+    use super::Valve;
     use anyhow::{anyhow, Result};
     use nom::{
         branch::alt,
         bytes::complete::{tag, take},
         character::complete::{line_ending, u32},
-        combinator::{iterator, map},
-        multi::separated_list1,
+        combinator::map,
+        multi::{many1, separated_list1},
         sequence::{preceded, terminated, Tuple},
         Finish, IResult,
     };
 
-    pub fn parse(input: &str) -> Result<Vec<(String, u32, Vec<String>)>> {
+    pub fn parse(input: &str) -> Result<Vec<Valve>> {
         let (rest, valves) = valves(input)
             .finish()
             .map_err(|err| anyhow!(err.to_string()))?;
@@ -192,7 +217,7 @@ pub mod parser {
         Ok(valves)
     }
 
-    fn valve(input: &str) -> IResult<&str, (String, u32, Vec<String>)> {
+    fn valve(input: &str) -> IResult<&str, Valve> {
         let valve_id = |input| map(take(2usize), String::from)(input);
         let id = preceded(tag("Valve "), valve_id);
         let flow_rate = preceded(tag(" has flow rate="), u32);
@@ -209,12 +234,9 @@ pub mod parser {
         Ok((input, valve))
     }
 
-    fn valves(input: &str) -> IResult<&str, Valves> {
+    fn valves(input: &str) -> IResult<&str, Vec<Valve>> {
         let line = terminated(valve, line_ending);
-        let mut iter = iterator(input, line);
-        let valves = iter.collect();
-        let (input, _) = iter.finish()?;
-        Ok((input, valves))
+        many1(line)(input)
     }
 
     #[cfg(test)]
