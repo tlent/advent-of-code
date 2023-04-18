@@ -9,6 +9,7 @@ edition.workspace = true
 anyhow.workspace = true
 nom.workspace = true
 rustc-hash.workspace = true
+bitvec.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true

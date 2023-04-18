@@ -1,8 +1,6 @@
+use bitvec::prelude::*;
 use rustc_hash::FxHashMap as HashMap;
-use std::{
-    cmp::{self, Reverse},
-    collections::BTreeSet,
-};
+use std::cmp::{self, Reverse};
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -36,7 +34,7 @@ pub fn preprocess(mut valves: Valves) -> (ProcessedValves, Vec<u32>) {
 }
 
 pub fn part_one(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
-    let unreleased_valve_ids = (0..valves.len()).collect();
+    let unreleased_valve_ids = bitvec![1; valves.len()];
     Solutions::new(valves, initial_distances, unreleased_valve_ids, 30)
         .map(|(pressure_released, _)| pressure_released)
         .max()
@@ -44,7 +42,7 @@ pub fn part_one(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
 }
 
 pub fn part_two(valves: &ProcessedValves, initial_distances: &[u32]) -> u32 {
-    let unreleased_valve_ids = (0..valves.len()).collect();
+    let unreleased_valve_ids = bitvec![1; valves.len()];
     Solutions::new(valves, initial_distances, unreleased_valve_ids, 26)
         .map(|(own_pressue, remaining_unreleased_valve_ids)| {
             let elephant_pressure = Solutions::new(
@@ -94,7 +92,7 @@ fn find_all_pairs_shortest_paths(valves: &[(String, u32, Vec<String>)]) -> Vec<V
 struct State<'a> {
     distances: &'a [u32],
     remaining_minutes: u32,
-    unreleased_valve_ids: BTreeSet<usize>,
+    unreleased_valve_ids: BitVec,
     released_pressure: u32,
 }
 
@@ -108,7 +106,7 @@ impl<'a> Solutions<'a> {
     fn new(
         valves: &'a ProcessedValves,
         initial_distances: &'a [u32],
-        unreleased_valve_ids: BTreeSet<usize>,
+        unreleased_valve_ids: BitVec,
         time_limit: u32,
     ) -> Self {
         let initial_state = State {
@@ -126,15 +124,15 @@ impl<'a> Solutions<'a> {
 }
 
 impl<'a> Iterator for Solutions<'a> {
-    type Item = (u32, BTreeSet<usize>);
+    type Item = (u32, BitVec);
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(state) = self.stack.pop() {
             let release_times = (0..=state.remaining_minutes).rev().step_by(2).skip(1);
             let flow_rates = state
                 .unreleased_valve_ids
-                .iter()
-                .map(|&id| self.valves[id].0);
+                .iter_ones()
+                .map(|id| self.valves[id].0);
             let max_remaining_pressure_release = release_times
                 .zip(flow_rates)
                 .map(|(t, f)| t * f)
@@ -144,14 +142,14 @@ impl<'a> Iterator for Solutions<'a> {
                 continue;
             }
             let mut is_solution = true;
-            for &id in state.unreleased_valve_ids.iter() {
+            for id in state.unreleased_valve_ids.iter_ones() {
                 let minutes_to_release = state.distances[id] + 1;
                 if state.remaining_minutes > minutes_to_release {
                     let remaining_minutes = state.remaining_minutes - minutes_to_release;
                     let (flow_rate, ref distances) = self.valves[id];
                     let released_pressure = state.released_pressure + remaining_minutes * flow_rate;
                     let mut unreleased_valve_ids = state.unreleased_valve_ids.clone();
-                    unreleased_valve_ids.remove(&id);
+                    unreleased_valve_ids.set(id, false);
                     let next_state = State {
                         distances,
                         remaining_minutes,
