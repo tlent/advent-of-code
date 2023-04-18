@@ -9,9 +9,9 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace.dependencies]
-anyhow = "1.0.70"
+anyhow = "1"
 bitvec = "1"
 criterion = "0.4"
-nom = "7.1.3"
-rayon = "1.7.0"
-rustc-hash = "1.1.0"
+nom = "7.1"
+rayon = "1.7"
+rustc-hash = "1.1"
