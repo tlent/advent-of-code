@@ -4,21 +4,30 @@ use std::cmp::{self, Reverse};
 
 pub const INPUT: &str = include_str!("../input.txt");
 
-type Valve = (String, u32, Vec<String>);
+#[derive(Debug, PartialEq, Eq)]
+pub struct Valve {
+    id: String,
+    flow_rate: u32,
+    tunnel_ids: Vec<String>,
+}
 
-type ProcessedValve = (u32, Vec<u32>);
+#[derive(Debug, PartialEq, Eq)]
+pub struct ProcessedValve {
+    flow_rate: u32,
+    distances: Vec<u32>,
+}
 
 pub fn preprocess(mut valves: Vec<Valve>) -> (Vec<ProcessedValve>, Vec<u32>) {
     // Sort the valves by flow rate in descending order.
     // Valves with lower indices have higher flow rates.
     // The Solutions iterator's upper bound calculation
     // relies on this
-    valves.sort_by_key(|&(_, flow_rate, _)| Reverse(flow_rate));
+    valves.sort_by_key(|valve| Reverse(valve.flow_rate));
 
     let distances = find_all_pairs_shortest_paths(&valves);
     let valves_with_flow = valves
         .iter()
-        .map(|&(_, flow_rate, _)| flow_rate)
+        .map(|valve| valve.flow_rate)
         .take_while(|&flow_rate| flow_rate > 0)
         .enumerate()
         .collect::<Vec<_>>();
@@ -27,7 +36,7 @@ pub fn preprocess(mut valves: Vec<Valve>) -> (Vec<ProcessedValve>, Vec<u32>) {
     // Distances from the starting point to each valve
     let initial_distances = valves
         .iter()
-        .position(|(id, _, _)| id == "AA")
+        .position(|valve| valve.id == "AA")
         .map(|i| distances[i][..valves_with_flow_count].to_vec())
         .unwrap();
 
@@ -35,7 +44,10 @@ pub fn preprocess(mut valves: Vec<Valve>) -> (Vec<ProcessedValve>, Vec<u32>) {
         .into_iter()
         .map(|(i, flow_rate)| {
             let distances = distances[i][..valves_with_flow_count].to_vec();
-            (flow_rate, distances)
+            ProcessedValve {
+                flow_rate,
+                distances,
+            }
         })
         .collect();
     (processed_valves, initial_distances)
@@ -74,12 +86,12 @@ fn find_all_pairs_shortest_paths(valves: &[Valve]) -> Vec<Vec<u32>> {
     let id_to_index = valves
         .iter()
         .enumerate()
-        .map(|(i, (id, _, _))| (id, i))
+        .map(|(i, valve)| (&valve.id, i))
         .collect::<HashMap<_, _>>();
     let mut distances = vec![vec![u32::MAX; valves.len()]; valves.len()];
-    for (i, (_, _, tunnel_ids)) in valves.iter().enumerate() {
+    for (i, valve) in valves.iter().enumerate() {
         distances[i][i] = 0;
-        for tunnel_id in tunnel_ids {
+        for tunnel_id in &valve.tunnel_ids {
             let j = id_to_index[tunnel_id];
             distances[i][j] = 1;
         }
@@ -156,7 +168,10 @@ impl<'a> Iterator for Solutions<'a> {
                 let minutes_to_release = state.distances[id] + 1;
                 if state.remaining_minutes > minutes_to_release {
                     let remaining_minutes = state.remaining_minutes - minutes_to_release;
-                    let (flow_rate, ref distances) = self.valves[id];
+                    let ProcessedValve {
+                        flow_rate,
+                        ref distances,
+                    } = self.valves[id];
                     let released_pressure = state.released_pressure + remaining_minutes * flow_rate;
                     let mut unreleased_valve_ids = state.unreleased_valve_ids.clone();
                     unreleased_valve_ids.set(id, false);
@@ -186,7 +201,7 @@ fn calculate_remaining_pressure_upper_bound(valves: &[ProcessedValve], state: &S
     let flow_rates = state
         .unreleased_valve_ids
         .iter_ones()
-        .map(|id| valves[id].0);
+        .map(|id| valves[id].flow_rate);
     let max_remaining_pressure_release = release_times
         .zip(flow_rates)
         .map(|(t, f)| t * f)
@@ -230,7 +245,12 @@ pub mod parser {
             separated_list1(tag(", "), valve_id),
         );
         let tunnel_ids = alt((single_tunnel_id, multiple_tunnel_ids));
-        let (input, valve) = (id, flow_rate, tunnel_ids).parse(input)?;
+        let (input, (id, flow_rate, tunnel_ids)) = (id, flow_rate, tunnel_ids).parse(input)?;
+        let valve = Valve {
+            id,
+            flow_rate,
+            tunnel_ids,
+        };
         Ok((input, valve))
     }
 
@@ -246,14 +266,18 @@ pub mod parser {
         #[test]
         fn test_valve() {
             let input = "Valve EF has flow rate=22; tunnels lead to valves FK, HT, DE";
-            let expected = (
-                "EF".to_string(),
-                22,
-                vec!["FK".to_string(), "HT".to_string(), "DE".to_string()],
-            );
+            let expected = Valve {
+                id: "EF".to_string(),
+                flow_rate: 22,
+                tunnel_ids: vec!["FK".to_string(), "HT".to_string(), "DE".to_string()],
+            };
             assert_eq!(valve(input), Ok(("", expected)));
             let input = "Valve AA has flow rate=22; tunnel leads to valve FK";
-            let expected = ("AA".to_string(), 22, vec!["FK".to_string()]);
+            let expected = Valve {
+                id: "AA".to_string(),
+                flow_rate: 22,
+                tunnel_ids: vec!["FK".to_string()],
+            };
             assert_eq!(valve(input), Ok(("", expected)));
         }
     }
