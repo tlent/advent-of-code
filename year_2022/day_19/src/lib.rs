@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::cmp;
+use rustc_hash::FxHashSet as HashSet;
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -100,56 +100,142 @@ pub fn part_two() -> () {
     todo!()
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct State {
-    max_resource_amount: u32,
-    max_collector_count: u32,
+    remaining_time: u32,
+    ore_count: u32,
+    clay_count: u32,
+    obsidian_count: u32,
+    geode_count: u32,
+    ore_collectors: u32,
+    clay_collectors: u32,
+    obsidian_collectors: u32,
+    geode_collectors: u32,
+}
+
+impl State {
+    fn time_until_afford_cost(&self, cost: Cost) -> Option<u32> {
+        let (current_amount, collector_count) = match cost.material {
+            Material::Ore => (self.ore_count, self.ore_collectors),
+            Material::Clay => (self.clay_count, self.clay_collectors),
+            Material::Obsidian => (self.obsidian_count, self.obsidian_collectors),
+            Material::Geode => (self.geode_count, self.geode_collectors),
+        };
+        if current_amount >= cost.amount {
+            Some(0)
+        } else if collector_count == 0 {
+            None
+        } else {
+            let needed = cost.amount - current_amount;
+            let quotient = needed / collector_count;
+            let remainder = needed % collector_count;
+            let time = if remainder == 0 {
+                quotient
+            } else {
+                quotient + 1
+            };
+            Some(time)
+        }
+    }
+
+    fn can_reach_geode_collector(&self, blueprint: &Blueprint) -> bool {
+        let mut state = self.clone();
+        if state.clay_collectors == 0 {
+            if let Some(s) = state.build_collector(blueprint, Material::Clay) {
+                state = s;
+            } else {
+                return false;
+            }
+        }
+        if state.obsidian_collectors == 0 {
+            if let Some(s) = state.build_collector(blueprint, Material::Obsidian) {
+                state = s;
+            } else {
+                return false;
+            }
+        }
+        state.build_collector(blueprint, Material::Geode).is_some()
+    }
+
+    fn build_collector(&self, blueprint: &Blueprint, collector_material: Material) -> Option<Self> {
+        let costs = blueprint.collector_costs_by_material(collector_material);
+        let times = costs
+            .iter()
+            .map(|c| self.time_until_afford_cost(*c))
+            .collect::<Option<Vec<_>>>()?;
+        let time_to_build = times.into_iter().max().unwrap();
+        if time_to_build >= self.remaining_time {
+            return None;
+        }
+        let mut next_state = self.clone();
+        next_state.remaining_time -= time_to_build;
+        next_state.ore_count += time_to_build * self.ore_collectors;
+        next_state.clay_count += time_to_build * self.clay_collectors;
+        next_state.obsidian_count += time_to_build * self.obsidian_collectors;
+        next_state.geode_count += time_to_build * self.geode_collectors;
+        for cost in costs.iter() {
+            match cost.material {
+                Material::Ore => next_state.ore_count -= cost.amount,
+                Material::Clay => next_state.clay_count -= cost.amount,
+                Material::Obsidian => next_state.obsidian_count -= cost.amount,
+                Material::Geode => next_state.geode_count -= cost.amount,
+            }
+        }
+        match collector_material {
+            Material::Ore => next_state.ore_collectors += 1,
+            Material::Clay => next_state.clay_collectors += 1,
+            Material::Obsidian => next_state.obsidian_collectors += 1,
+            Material::Geode => next_state.geode_collectors += 1,
+        }
+        Some(next_state)
+    }
 }
 
 fn find_max_geode_count(blueprint: &Blueprint) -> u32 {
-    const TIME_LIMIT: usize = 24;
-    let collector_cost = blueprint.collector_costs_by_material(Material::Ore)[0].amount;
-    let mut states: [State; TIME_LIMIT] = Default::default();
-    for minute in 1..TIME_LIMIT {
-        states[minute].max_resource_amount = states[minute - 1].max_resource_amount + 1;
-    }
-    let mut collector_count = 1;
-    let mut collected = 0;
-    for minute in 0..TIME_LIMIT {
-        states[minute].max_collector_count = collector_count;
-        collected += collector_count;
-        if collected > collector_cost {
-            collector_count += 1;
-            collected -= collector_cost;
-            let mut future_collected = collected;
-            for state in &mut states[minute + 1..] {
-                future_collected += collector_count;
-                state.max_resource_amount = cmp::max(state.max_resource_amount, future_collected);
+    let mut seen_states = HashSet::default();
+    let mut max_geode_count = 0;
+    let initial_state = State {
+        remaining_time: 24,
+        ore_collectors: 1,
+        ore_count: 0,
+        clay_count: 0,
+        obsidian_count: 0,
+        geode_count: 0,
+        clay_collectors: 0,
+        obsidian_collectors: 0,
+        geode_collectors: 0,
+    };
+    let mut stack = vec![initial_state];
+    while let Some(state) = stack.pop() {
+        let next_collector_materials: Box<[Material]> = if state.clay_collectors == 0 {
+            Box::new([Material::Ore, Material::Clay])
+        } else if state.obsidian_collectors == 0 {
+            Box::new([Material::Clay, Material::Obsidian])
+        } else if state.geode_collectors == 0 {
+            Box::new([Material::Obsidian, Material::Geode])
+        } else {
+            Box::new([Material::Geode])
+        };
+        let mut next_states = next_collector_materials
+            .iter()
+            .filter_map(|m| {
+                state
+                    .build_collector(blueprint, *m)
+                    .filter(|s| s.can_reach_geode_collector(blueprint))
+            })
+            .peekable();
+        if next_states.peek().is_none() {
+            let final_geode_count =
+                state.geode_count + state.geode_collectors * state.remaining_time;
+            max_geode_count = max_geode_count.max(final_geode_count);
+        }
+        for next_state in next_states {
+            if seen_states.insert(next_state.clone()) {
+                stack.push(next_state);
             }
         }
     }
-    dbg!(&states);
-    // for minute in 1..TIME_LIMIT {
-    //     let new_collector_count = if ore_states[minute - 1].max_resource_amount / collector_cost
-    //         > ore_states[minute - 1].max_collector_count
-    //     {
-    //         ore_states[minute - 1].max_collector_count + 1
-    //     } else {
-    //         ore_states[minute - 1].max_collector_count
-    //     };
-    //     ore_states[minute].max_collector_count = new_collector_count;
-    //     if ore_states[minute].max_collector_count > ore_states[minute - 1].max_collector_count {
-    //         for m in minute + 1..TIME_LIMIT {
-    //             ore_states[m].max_resource_amount = cmp::max(
-    //                 ore_states[m - 1].max_resource_amount + ore_states[minute].max_collector_count,
-    //                 ore_states[m].max_resource_amount,
-    //             );
-    //             ore_states[m].max_collector_count = ore_states[minute].max_collector_count;
-    //         }
-    //     }
-    // }
-    // dbg!(ore_states);
-    todo!()
+    max_geode_count
 }
 
 #[cfg(test)]
