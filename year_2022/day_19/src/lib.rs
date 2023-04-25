@@ -4,102 +4,6 @@ use std::mem;
 
 pub const INPUT: &str = include_str!("../input.txt");
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Blueprint {
-    id: u32,
-    ore: ResourceBlueprint,
-    clay: ResourceBlueprint,
-    obsidian: ResourceBlueprint,
-    geode: ResourceBlueprint,
-}
-
-impl Blueprint {
-    fn new(
-        id: u32,
-        ore_collector_costs: Box<[Cost]>,
-        clay_collector_costs: Box<[Cost]>,
-        obsidian_collector_costs: Box<[Cost]>,
-        geode_collector_costs: Box<[Cost]>,
-    ) -> Self {
-        let all_costs = [
-            ore_collector_costs.iter().copied(),
-            clay_collector_costs.iter().copied(),
-            obsidian_collector_costs.iter().copied(),
-            geode_collector_costs.iter().copied(),
-        ]
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>();
-        let max_useful_collectors = |r| {
-            all_costs
-                .iter()
-                .filter(|c| c.resource == r)
-                .map(|c| c.amount)
-                .max()
-        };
-        Blueprint {
-            id,
-            ore: ResourceBlueprint {
-                collector_costs: ore_collector_costs,
-                max_useful_collectors: max_useful_collectors(Resource::Ore),
-            },
-            clay: ResourceBlueprint {
-                collector_costs: clay_collector_costs,
-                max_useful_collectors: max_useful_collectors(Resource::Clay),
-            },
-            obsidian: ResourceBlueprint {
-                collector_costs: obsidian_collector_costs,
-                max_useful_collectors: max_useful_collectors(Resource::Obsidian),
-            },
-            geode: ResourceBlueprint {
-                collector_costs: geode_collector_costs,
-                max_useful_collectors: max_useful_collectors(Resource::Geode),
-            },
-        }
-    }
-
-    fn resource(&self, resource: Resource) -> &ResourceBlueprint {
-        match resource {
-            Resource::Ore => &self.ore,
-            Resource::Clay => &self.clay,
-            Resource::Obsidian => &self.obsidian,
-            Resource::Geode => &self.geode,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ResourceBlueprint {
-    collector_costs: Box<[Cost]>,
-    max_useful_collectors: Option<u32>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Resource {
-    Ore,
-    Clay,
-    Obsidian,
-    Geode,
-}
-
-impl Resource {
-    fn iter() -> impl Iterator<Item = Resource> {
-        [
-            Resource::Ore,
-            Resource::Clay,
-            Resource::Obsidian,
-            Resource::Geode,
-        ]
-        .into_iter()
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Cost {
-    amount: u32,
-    resource: Resource,
-}
-
 pub fn parse_input(input: &str) -> Vec<Blueprint> {
     let regex_str = concat!(
         r"Blueprint (\d+): ",
@@ -167,41 +71,6 @@ pub fn part_two(blueprints: &[Blueprint]) -> u32 {
         .product()
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-struct State {
-    ore: ResourceState,
-    clay: ResourceState,
-    obsidian: ResourceState,
-    geode: ResourceState,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-struct ResourceState {
-    amount: u32,
-    collector_count: u32,
-    collector_built: bool,
-}
-
-impl State {
-    fn resource(&self, resource: Resource) -> &ResourceState {
-        match resource {
-            Resource::Ore => &self.ore,
-            Resource::Clay => &self.clay,
-            Resource::Obsidian => &self.obsidian,
-            Resource::Geode => &self.geode,
-        }
-    }
-
-    fn resource_mut(&mut self, resource: Resource) -> &mut ResourceState {
-        match resource {
-            Resource::Ore => &mut self.ore,
-            Resource::Clay => &mut self.clay,
-            Resource::Obsidian => &mut self.obsidian,
-            Resource::Geode => &mut self.geode,
-        }
-    }
-}
-
 fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
     let mut initial_state = State::default();
     initial_state.ore.collector_count = 1;
@@ -253,6 +122,137 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         .map(|s| s.resource(Resource::Geode).amount)
         .max()
         .unwrap()
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Cost {
+    amount: u32,
+    resource: Resource,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Resource {
+    Ore,
+    Clay,
+    Obsidian,
+    Geode,
+}
+
+impl Resource {
+    fn iter() -> impl Iterator<Item = Resource> {
+        [
+            Resource::Ore,
+            Resource::Clay,
+            Resource::Obsidian,
+            Resource::Geode,
+        ]
+        .into_iter()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Blueprint {
+    id: u32,
+    ore: ResourceBlueprint,
+    clay: ResourceBlueprint,
+    obsidian: ResourceBlueprint,
+    geode: ResourceBlueprint,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ResourceBlueprint {
+    collector_costs: Box<[Cost]>,
+    max_useful_collectors: Option<u32>,
+}
+
+impl Blueprint {
+    fn new(
+        id: u32,
+        ore_collector_costs: Box<[Cost]>,
+        clay_collector_costs: Box<[Cost]>,
+        obsidian_collector_costs: Box<[Cost]>,
+        geode_collector_costs: Box<[Cost]>,
+    ) -> Self {
+        let all_costs = [
+            ore_collector_costs.iter().copied(),
+            clay_collector_costs.iter().copied(),
+            obsidian_collector_costs.iter().copied(),
+            geode_collector_costs.iter().copied(),
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+        let max_useful_collectors = |r| {
+            all_costs
+                .iter()
+                .filter(|c| c.resource == r)
+                .map(|c| c.amount)
+                .max()
+        };
+        Blueprint {
+            id,
+            ore: ResourceBlueprint {
+                collector_costs: ore_collector_costs,
+                max_useful_collectors: max_useful_collectors(Resource::Ore),
+            },
+            clay: ResourceBlueprint {
+                collector_costs: clay_collector_costs,
+                max_useful_collectors: max_useful_collectors(Resource::Clay),
+            },
+            obsidian: ResourceBlueprint {
+                collector_costs: obsidian_collector_costs,
+                max_useful_collectors: max_useful_collectors(Resource::Obsidian),
+            },
+            geode: ResourceBlueprint {
+                collector_costs: geode_collector_costs,
+                max_useful_collectors: max_useful_collectors(Resource::Geode),
+            },
+        }
+    }
+
+    fn resource(&self, resource: Resource) -> &ResourceBlueprint {
+        match resource {
+            Resource::Ore => &self.ore,
+            Resource::Clay => &self.clay,
+            Resource::Obsidian => &self.obsidian,
+            Resource::Geode => &self.geode,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+struct State {
+    ore: ResourceState,
+    clay: ResourceState,
+    obsidian: ResourceState,
+    geode: ResourceState,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+struct ResourceState {
+    amount: u32,
+    collector_count: u32,
+    collector_built: bool,
+}
+
+impl State {
+    fn resource(&self, resource: Resource) -> &ResourceState {
+        match resource {
+            Resource::Ore => &self.ore,
+            Resource::Clay => &self.clay,
+            Resource::Obsidian => &self.obsidian,
+            Resource::Geode => &self.geode,
+        }
+    }
+
+    fn resource_mut(&mut self, resource: Resource) -> &mut ResourceState {
+        match resource {
+            Resource::Ore => &mut self.ore,
+            Resource::Clay => &mut self.clay,
+            Resource::Obsidian => &mut self.obsidian,
+            Resource::Geode => &mut self.geode,
+        }
+    }
 }
 
 #[cfg(test)]
