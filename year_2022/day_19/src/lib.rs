@@ -14,7 +14,7 @@ pub struct Blueprint {
 }
 
 impl Blueprint {
-    fn collector_costs_by_resource(&self, resource: Resource) -> &[Cost] {
+    fn resource_collector_costs(&self, resource: Resource) -> &[Cost] {
         match resource {
             Resource::Ore => &self.ore_collector_costs,
             Resource::Clay => &self.clay_collector_costs,
@@ -107,10 +107,10 @@ pub fn part_two(blueprints: &[Blueprint]) -> u32 {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 struct State {
-    ore_state: ResourceState,
-    clay_state: ResourceState,
-    obsidian_state: ResourceState,
-    geode_state: ResourceState,
+    ore: ResourceState,
+    clay: ResourceState,
+    obsidian: ResourceState,
+    geode: ResourceState,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
@@ -123,19 +123,19 @@ struct ResourceState {
 impl State {
     fn resource(&self, resource: Resource) -> &ResourceState {
         match resource {
-            Resource::Ore => &self.ore_state,
-            Resource::Clay => &self.clay_state,
-            Resource::Obsidian => &self.obsidian_state,
-            Resource::Geode => &self.geode_state,
+            Resource::Ore => &self.ore,
+            Resource::Clay => &self.clay,
+            Resource::Obsidian => &self.obsidian,
+            Resource::Geode => &self.geode,
         }
     }
 
     fn resource_mut(&mut self, resource: Resource) -> &mut ResourceState {
         match resource {
-            Resource::Ore => &mut self.ore_state,
-            Resource::Clay => &mut self.clay_state,
-            Resource::Obsidian => &mut self.obsidian_state,
-            Resource::Geode => &mut self.geode_state,
+            Resource::Ore => &mut self.ore,
+            Resource::Clay => &mut self.clay,
+            Resource::Obsidian => &mut self.obsidian,
+            Resource::Geode => &mut self.geode,
         }
     }
 }
@@ -151,7 +151,7 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         .into_iter()
         .filter_map(|m| {
             blueprint
-                .collector_costs_by_resource(m)
+                .resource_collector_costs(m)
                 .iter()
                 .filter(|c| c.resource == Resource::Ore)
                 .map(|c| c.amount)
@@ -163,7 +163,7 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         .into_iter()
         .filter_map(|m| {
             blueprint
-                .collector_costs_by_resource(m)
+                .resource_collector_costs(m)
                 .iter()
                 .filter(|c| c.resource == Resource::Clay)
                 .map(|c| c.amount)
@@ -175,7 +175,7 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         .into_iter()
         .filter_map(|m| {
             blueprint
-                .collector_costs_by_resource(m)
+                .resource_collector_costs(m)
                 .iter()
                 .filter(|c| c.resource == Resource::Obsidian)
                 .map(|c| c.amount)
@@ -184,7 +184,7 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         .max()
         .unwrap();
     let mut initial_state = State::default();
-    initial_state.ore_state.collector_count = 1;
+    initial_state.ore.collector_count = 1;
     let mut prev_states = HashSet::default();
     let mut states = [initial_state].into_iter().collect::<HashSet<_>>();
     for _minute in 1..=time_limit {
@@ -208,7 +208,7 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
                 if capped {
                     continue;
                 }
-                let costs = blueprint.collector_costs_by_resource(m);
+                let costs = blueprint.resource_collector_costs(m);
                 if costs
                     .iter()
                     .all(|c| prev_state.resource(c.resource).amount >= c.amount)
