@@ -176,8 +176,7 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
     let mut states = [initial_state].into_iter().collect::<HashSet<_>>();
     for minute in 1..=time_limit {
         mem::swap(&mut prev_states, &mut states);
-        states.clear();
-        for prev in prev_states.iter() {
+        for prev in prev_states.drain() {
             let mut after_tick = prev.clone();
             for material in materials {
                 *after_tick.material_count_mut(material) += prev.material_collector_count(material);
