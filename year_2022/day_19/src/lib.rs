@@ -7,21 +7,26 @@ pub const INPUT: &str = include_str!("../input.txt");
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Blueprint {
     id: u32,
-    ore_collector_costs: Box<[Cost]>,
-    clay_collector_costs: Box<[Cost]>,
-    obsidian_collector_costs: Box<[Cost]>,
-    geode_collector_costs: Box<[Cost]>,
+    ore: ResourceBlueprint,
+    clay: ResourceBlueprint,
+    obsidian: ResourceBlueprint,
+    geode: ResourceBlueprint,
 }
 
 impl Blueprint {
-    fn resource_collector_costs(&self, resource: Resource) -> &[Cost] {
+    fn resource(&self, resource: Resource) -> &ResourceBlueprint {
         match resource {
-            Resource::Ore => &self.ore_collector_costs,
-            Resource::Clay => &self.clay_collector_costs,
-            Resource::Obsidian => &self.obsidian_collector_costs,
-            Resource::Geode => &self.geode_collector_costs,
+            Resource::Ore => &self.ore,
+            Resource::Clay => &self.clay,
+            Resource::Obsidian => &self.obsidian,
+            Resource::Geode => &self.geode,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ResourceBlueprint {
+    collector_costs: Box<[Cost]>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -81,10 +86,18 @@ pub fn parse_input(input: &str) -> Vec<Blueprint> {
             ]);
             Blueprint {
                 id,
-                ore_collector_costs,
-                clay_collector_costs,
-                obsidian_collector_costs,
-                geode_collector_costs,
+                ore: ResourceBlueprint {
+                    collector_costs: ore_collector_costs,
+                },
+                clay: ResourceBlueprint {
+                    collector_costs: clay_collector_costs,
+                },
+                obsidian: ResourceBlueprint {
+                    collector_costs: obsidian_collector_costs,
+                },
+                geode: ResourceBlueprint {
+                    collector_costs: geode_collector_costs,
+                },
             }
         })
         .collect()
@@ -151,7 +164,8 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         .into_iter()
         .filter_map(|m| {
             blueprint
-                .resource_collector_costs(m)
+                .resource(m)
+                .collector_costs
                 .iter()
                 .filter(|c| c.resource == Resource::Ore)
                 .map(|c| c.amount)
@@ -163,7 +177,8 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         .into_iter()
         .filter_map(|m| {
             blueprint
-                .resource_collector_costs(m)
+                .resource(m)
+                .collector_costs
                 .iter()
                 .filter(|c| c.resource == Resource::Clay)
                 .map(|c| c.amount)
@@ -175,7 +190,8 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         .into_iter()
         .filter_map(|m| {
             blueprint
-                .resource_collector_costs(m)
+                .resource(m)
+                .collector_costs
                 .iter()
                 .filter(|c| c.resource == Resource::Obsidian)
                 .map(|c| c.amount)
@@ -208,7 +224,7 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
                 if capped {
                     continue;
                 }
-                let costs = blueprint.resource_collector_costs(m);
+                let costs = &blueprint.resource(m).collector_costs;
                 if costs
                     .iter()
                     .all(|c| prev_state.resource(c.resource).amount >= c.amount)
