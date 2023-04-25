@@ -1,5 +1,6 @@
 use regex::Regex;
 use rustc_hash::FxHashSet as HashSet;
+use std::mem;
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -171,10 +172,12 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         Material::Obsidian,
         Material::Geode,
     ];
+    let mut prev_states = HashSet::default();
     let mut states = [initial_state].into_iter().collect::<HashSet<_>>();
     for minute in 1..=time_limit {
-        let mut new_states = HashSet::default();
-        for prev in states {
+        mem::swap(&mut prev_states, &mut states);
+        states.clear();
+        for prev in prev_states.iter() {
             let mut after_tick = prev.clone();
             for material in materials {
                 *after_tick.material_count_mut(material) += prev.material_collector_count(material);
@@ -190,12 +193,11 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
                         *add_collector.material_count_mut(cost.material) -= cost.amount;
                     }
                     *add_collector.material_collector_count_mut(material) += 1;
-                    new_states.insert(add_collector);
+                    states.insert(add_collector);
                 }
             }
-            new_states.insert(after_tick);
+            states.insert(after_tick);
         }
-        states = new_states;
         dbg!(minute, states.len());
     }
     states.iter().map(|s| s.geode_count).max().unwrap()
