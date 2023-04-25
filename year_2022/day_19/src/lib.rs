@@ -1,4 +1,5 @@
 use regex::Regex;
+use rustc_hash::FxHashSet as HashSet;
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -166,28 +167,34 @@ fn find_max_geode_count(blueprint: &Blueprint) -> u32 {
         Material::Obsidian,
         Material::Geode,
     ];
-    let mut states = vec![initial_state];
+    let mut states = [initial_state].into_iter().collect::<HashSet<_>>();
     for minute in 1..=24 {
-        for state in states.iter_mut() {
-            let mut updated_state = state.clone();
+        let mut new_states = HashSet::default();
+        for prev in states {
+            let mut after_tick = prev.clone();
+            for material in materials {
+                *after_tick.material_count_mut(material) += prev.material_collector_count(material);
+            }
             for material in materials {
                 let costs = blueprint.collector_costs_by_material(material);
-                *updated_state.material_count_mut(material) +=
-                    state.material_collector_count(material);
                 if costs
                     .iter()
-                    .all(|c| state.material_count(c.material) >= c.amount)
+                    .all(|c| prev.material_count(c.material) >= c.amount)
                 {
+                    let mut add_collector = after_tick.clone();
                     for cost in costs.iter() {
-                        *updated_state.material_count_mut(cost.material) -= cost.amount;
+                        *add_collector.material_count_mut(cost.material) -= cost.amount;
                     }
-                    *updated_state.material_collector_count_mut(material) += 1;
+                    *add_collector.material_collector_count_mut(material) += 1;
+                    new_states.insert(add_collector);
                 }
             }
-            *state = updated_state;
+            new_states.insert(after_tick);
         }
+        states = new_states;
+        dbg!(minute, states.len());
     }
-    todo!()
+    states.iter().map(|s| s.geode_count).max().unwrap()
 }
 
 #[cfg(test)]
