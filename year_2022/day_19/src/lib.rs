@@ -14,6 +14,30 @@ pub struct Blueprint {
 }
 
 impl Blueprint {
+    fn new(
+        id: u32,
+        ore_collector_costs: Box<[Cost]>,
+        clay_collector_costs: Box<[Cost]>,
+        obsidian_collector_costs: Box<[Cost]>,
+        geode_collector_costs: Box<[Cost]>,
+    ) -> Self {
+        Blueprint {
+            id,
+            ore: ResourceBlueprint {
+                collector_costs: ore_collector_costs,
+            },
+            clay: ResourceBlueprint {
+                collector_costs: clay_collector_costs,
+            },
+            obsidian: ResourceBlueprint {
+                collector_costs: obsidian_collector_costs,
+            },
+            geode: ResourceBlueprint {
+                collector_costs: geode_collector_costs,
+            },
+        }
+    }
+
     fn resource(&self, resource: Resource) -> &ResourceBlueprint {
         match resource {
             Resource::Ore => &self.ore,
@@ -68,15 +92,15 @@ pub fn parse_input(input: &str) -> Vec<Blueprint> {
         .captures_iter(input)
         .map(|captures| {
             let id = captures[1].parse().unwrap();
-            let ore_collector_costs = Box::new([Cost {
+            let ore_collector_cost = Cost {
                 amount: captures[2].parse().unwrap(),
                 resource: Resource::Ore,
-            }]);
-            let clay_collector_costs = Box::new([Cost {
+            };
+            let clay_collector_cost = Cost {
                 amount: captures[3].parse().unwrap(),
                 resource: Resource::Ore,
-            }]);
-            let obsidian_collector_costs = Box::new([
+            };
+            let obsidian_collector_costs = [
                 Cost {
                     amount: captures[4].parse().unwrap(),
                     resource: Resource::Ore,
@@ -85,8 +109,8 @@ pub fn parse_input(input: &str) -> Vec<Blueprint> {
                     amount: captures[5].parse().unwrap(),
                     resource: Resource::Clay,
                 },
-            ]);
-            let geode_collector_costs = Box::new([
+            ];
+            let geode_collector_costs = [
                 Cost {
                     amount: captures[6].parse().unwrap(),
                     resource: Resource::Ore,
@@ -95,22 +119,14 @@ pub fn parse_input(input: &str) -> Vec<Blueprint> {
                     amount: captures[7].parse().unwrap(),
                     resource: Resource::Obsidian,
                 },
-            ]);
-            Blueprint {
+            ];
+            Blueprint::new(
                 id,
-                ore: ResourceBlueprint {
-                    collector_costs: ore_collector_costs,
-                },
-                clay: ResourceBlueprint {
-                    collector_costs: clay_collector_costs,
-                },
-                obsidian: ResourceBlueprint {
-                    collector_costs: obsidian_collector_costs,
-                },
-                geode: ResourceBlueprint {
-                    collector_costs: geode_collector_costs,
-                },
-            }
+                Box::new([ore_collector_cost]),
+                Box::new([clay_collector_cost]),
+                Box::new(obsidian_collector_costs),
+                Box::new(geode_collector_costs),
+            )
         })
         .collect()
 }
