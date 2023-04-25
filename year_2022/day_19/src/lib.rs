@@ -105,53 +105,37 @@ pub fn part_two(blueprints: &[Blueprint]) -> u32 {
         .product()
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 struct State {
-    ore_count: u32,
-    clay_count: u32,
-    obsidian_count: u32,
-    geode_count: u32,
-    ore_collectors: u32,
-    clay_collectors: u32,
-    obsidian_collectors: u32,
-    geode_collectors: u32,
-    remaining_buildable: Vec<Material>,
+    ore_state: MaterialState,
+    clay_state: MaterialState,
+    obsidian_state: MaterialState,
+    geode_state: MaterialState,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+struct MaterialState {
+    amount: u32,
+    collector_count: u32,
+    collector_built: bool,
 }
 
 impl State {
-    fn material_count(&self, material: Material) -> u32 {
+    fn material(&self, material: Material) -> &MaterialState {
         match material {
-            Material::Ore => self.ore_count,
-            Material::Clay => self.clay_count,
-            Material::Obsidian => self.obsidian_count,
-            Material::Geode => self.geode_count,
+            Material::Ore => &self.ore_state,
+            Material::Clay => &self.clay_state,
+            Material::Obsidian => &self.obsidian_state,
+            Material::Geode => &self.geode_state,
         }
     }
 
-    fn material_count_mut(&mut self, material: Material) -> &mut u32 {
+    fn material_mut(&mut self, material: Material) -> &mut MaterialState {
         match material {
-            Material::Ore => &mut self.ore_count,
-            Material::Clay => &mut self.clay_count,
-            Material::Obsidian => &mut self.obsidian_count,
-            Material::Geode => &mut self.geode_count,
-        }
-    }
-
-    fn material_collector_count(&self, material: Material) -> u32 {
-        match material {
-            Material::Ore => self.ore_collectors,
-            Material::Clay => self.clay_collectors,
-            Material::Obsidian => self.obsidian_collectors,
-            Material::Geode => self.geode_collectors,
-        }
-    }
-
-    fn material_collector_count_mut(&mut self, material: Material) -> &mut u32 {
-        match material {
-            Material::Ore => &mut self.ore_collectors,
-            Material::Clay => &mut self.clay_collectors,
-            Material::Obsidian => &mut self.obsidian_collectors,
-            Material::Geode => &mut self.geode_collectors,
+            Material::Ore => &mut self.ore_state,
+            Material::Clay => &mut self.clay_state,
+            Material::Obsidian => &mut self.obsidian_state,
+            Material::Geode => &mut self.geode_state,
         }
     }
 }
@@ -163,50 +147,52 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         Material::Obsidian,
         Material::Geode,
     ];
-    let initial_state = State {
-        ore_collectors: 1,
-        ore_count: 0,
-        clay_count: 0,
-        obsidian_count: 0,
-        geode_count: 0,
-        clay_collectors: 0,
-        obsidian_collectors: 0,
-        geode_collectors: 0,
-        remaining_buildable: materials.to_vec(),
-    };
+    let mut initial_state = State::default();
+    initial_state.ore_state.collector_count = 1;
     let mut prev_states = HashSet::default();
     let mut states = [initial_state].into_iter().collect::<HashSet<_>>();
     for minute in 1..=time_limit {
         mem::swap(&mut prev_states, &mut states);
-        for prev in prev_states.drain() {
-            let mut after_tick = prev.clone();
-            for material in materials {
-                *after_tick.material_count_mut(material) += prev.material_collector_count(material);
+        for prev_state in prev_states.drain() {
+            let mut next_state = prev_state.clone();
+            for m in materials {
+                next_state.material_mut(m).amount += next_state.material(m).collector_count;
             }
-            let buildable = after_tick.remaining_buildable.clone();
-            for material in buildable {
-                let costs = blueprint.collector_costs_by_material(material);
+            for m in materials {
+                if next_state.material(m).collector_built {
+                    continue;
+                }
+                let costs = blueprint.collector_costs_by_material(m);
                 if costs
                     .iter()
-                    .all(|c| prev.material_count(c.material) >= c.amount)
+                    .all(|c| prev_state.material(c.material).amount >= c.amount)
                 {
-                    let mut add_collector = after_tick.clone();
-                    for cost in costs.iter() {
-                        *add_collector.material_count_mut(cost.material) -= cost.amount;
+                    next_state.material_mut(m).collector_built = true;
+                    let mut new_state = next_state.clone();
+                    for m in materials {
+                        new_state.material_mut(m).collector_built = false;
                     }
-                    *add_collector.material_collector_count_mut(material) += 1;
-                    after_tick.remaining_buildable.retain(|m| *m != material);
-                    add_collector.remaining_buildable = materials.to_vec();
-                    states.insert(add_collector);
+                    for cost in costs.iter() {
+                        new_state.material_mut(cost.material).amount -= cost.amount;
+                    }
+                    new_state.material_mut(m).collector_count += 1;
+                    states.insert(new_state);
                 }
             }
-            if !after_tick.remaining_buildable.is_empty() {
-                states.insert(after_tick);
+            if materials
+                .into_iter()
+                .any(|m| !next_state.material(m).collector_built)
+            {
+                states.insert(next_state);
             }
         }
         dbg!(minute, states.len());
     }
-    states.iter().map(|s| s.geode_count).max().unwrap()
+    states
+        .iter()
+        .map(|s| s.material(Material::Geode).amount)
+        .max()
+        .unwrap()
 }
 
 #[cfg(test)]
