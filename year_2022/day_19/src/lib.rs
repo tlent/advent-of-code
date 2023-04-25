@@ -147,6 +147,42 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         Material::Obsidian,
         Material::Geode,
     ];
+    let max_ore_collectors = materials
+        .into_iter()
+        .filter_map(|m| {
+            blueprint
+                .collector_costs_by_material(m)
+                .iter()
+                .filter(|c| c.material == Material::Ore)
+                .map(|c| c.amount)
+                .max()
+        })
+        .max()
+        .unwrap();
+    let max_clay_collectors = materials
+        .into_iter()
+        .filter_map(|m| {
+            blueprint
+                .collector_costs_by_material(m)
+                .iter()
+                .filter(|c| c.material == Material::Clay)
+                .map(|c| c.amount)
+                .max()
+        })
+        .max()
+        .unwrap();
+    let max_obsidian_collectors = materials
+        .into_iter()
+        .filter_map(|m| {
+            blueprint
+                .collector_costs_by_material(m)
+                .iter()
+                .filter(|c| c.material == Material::Obsidian)
+                .map(|c| c.amount)
+                .max()
+        })
+        .max()
+        .unwrap();
     let mut initial_state = State::default();
     initial_state.ore_state.collector_count = 1;
     let mut prev_states = HashSet::default();
@@ -160,6 +196,16 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
             }
             for m in materials {
                 if next_state.material(m).collector_built {
+                    continue;
+                }
+                let collector_count = next_state.material(m).collector_count;
+                let capped = match m {
+                    Material::Ore => collector_count >= max_ore_collectors,
+                    Material::Clay => collector_count >= max_clay_collectors,
+                    Material::Obsidian => collector_count >= max_obsidian_collectors,
+                    Material::Geode => false,
+                };
+                if capped {
                     continue;
                 }
                 let costs = blueprint.collector_costs_by_material(m);
