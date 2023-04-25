@@ -115,6 +115,7 @@ struct State {
     clay_collectors: u32,
     obsidian_collectors: u32,
     geode_collectors: u32,
+    remaining_buildable: Vec<Material>,
 }
 
 impl State {
@@ -156,6 +157,12 @@ impl State {
 }
 
 fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
+    let materials = [
+        Material::Ore,
+        Material::Clay,
+        Material::Obsidian,
+        Material::Geode,
+    ];
     let initial_state = State {
         ore_collectors: 1,
         ore_count: 0,
@@ -165,13 +172,8 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         clay_collectors: 0,
         obsidian_collectors: 0,
         geode_collectors: 0,
+        remaining_buildable: materials.to_vec(),
     };
-    let materials = [
-        Material::Ore,
-        Material::Clay,
-        Material::Obsidian,
-        Material::Geode,
-    ];
     let mut prev_states = HashSet::default();
     let mut states = [initial_state].into_iter().collect::<HashSet<_>>();
     for minute in 1..=time_limit {
@@ -181,7 +183,8 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
             for material in materials {
                 *after_tick.material_count_mut(material) += prev.material_collector_count(material);
             }
-            for material in materials {
+            let buildable = after_tick.remaining_buildable.clone();
+            for material in buildable {
                 let costs = blueprint.collector_costs_by_material(material);
                 if costs
                     .iter()
@@ -192,10 +195,14 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
                         *add_collector.material_count_mut(cost.material) -= cost.amount;
                     }
                     *add_collector.material_collector_count_mut(material) += 1;
+                    after_tick.remaining_buildable.retain(|m| *m != material);
+                    add_collector.remaining_buildable = materials.to_vec();
                     states.insert(add_collector);
                 }
             }
-            states.insert(after_tick);
+            if !after_tick.remaining_buildable.is_empty() {
+                states.insert(after_tick);
+            }
         }
         dbg!(minute, states.len());
     }
