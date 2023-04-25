@@ -252,6 +252,7 @@ mod test {
 
     #[test]
     fn test_part_two() {
-        todo!()
+        let blueprints = parse_input(INPUT);
+        assert_eq!(part_two(&blueprints), 6804);
     }
 }
