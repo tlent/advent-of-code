@@ -207,7 +207,8 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        todo!()
+        let blueprints = parse_input(INPUT);
+        assert_eq!(part_one(&blueprints), 1659);
     }
 
     #[test]
