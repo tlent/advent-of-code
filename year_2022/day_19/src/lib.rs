@@ -92,12 +92,16 @@ pub fn parse_input(input: &str) -> Vec<Blueprint> {
 pub fn part_one(blueprints: &[Blueprint]) -> u32 {
     blueprints
         .iter()
-        .map(|b| dbg!(b.id) * dbg!(find_max_geode_count(b)))
+        .map(|b| dbg!(b.id) * dbg!(find_max_geode_count(b, 24)))
         .sum()
 }
 
-pub fn part_two() -> () {
-    todo!()
+pub fn part_two(blueprints: &[Blueprint]) -> u32 {
+    blueprints
+        .iter()
+        .take(3)
+        .map(|b| dbg!(find_max_geode_count(b, 32)))
+        .product()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -150,7 +154,7 @@ impl State {
     }
 }
 
-fn find_max_geode_count(blueprint: &Blueprint) -> u32 {
+fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
     let initial_state = State {
         ore_collectors: 1,
         ore_count: 0,
@@ -168,7 +172,7 @@ fn find_max_geode_count(blueprint: &Blueprint) -> u32 {
         Material::Geode,
     ];
     let mut states = [initial_state].into_iter().collect::<HashSet<_>>();
-    for minute in 1..=24 {
+    for minute in 1..=time_limit {
         let mut new_states = HashSet::default();
         for prev in states {
             let mut after_tick = prev.clone();
