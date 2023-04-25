@@ -14,18 +14,18 @@ pub struct Blueprint {
 }
 
 impl Blueprint {
-    fn collector_costs_by_material(&self, material: Material) -> &[Cost] {
-        match material {
-            Material::Ore => &self.ore_collector_costs,
-            Material::Clay => &self.clay_collector_costs,
-            Material::Obsidian => &self.obsidian_collector_costs,
-            Material::Geode => &self.geode_collector_costs,
+    fn collector_costs_by_resource(&self, resource: Resource) -> &[Cost] {
+        match resource {
+            Resource::Ore => &self.ore_collector_costs,
+            Resource::Clay => &self.clay_collector_costs,
+            Resource::Obsidian => &self.obsidian_collector_costs,
+            Resource::Geode => &self.geode_collector_costs,
         }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Material {
+pub enum Resource {
     Ore,
     Clay,
     Obsidian,
@@ -35,7 +35,7 @@ pub enum Material {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Cost {
     amount: u32,
-    material: Material,
+    resource: Resource,
 }
 
 pub fn parse_input(input: &str) -> Vec<Blueprint> {
@@ -53,30 +53,30 @@ pub fn parse_input(input: &str) -> Vec<Blueprint> {
             let id = captures[1].parse().unwrap();
             let ore_collector_costs = Box::new([Cost {
                 amount: captures[2].parse().unwrap(),
-                material: Material::Ore,
+                resource: Resource::Ore,
             }]);
             let clay_collector_costs = Box::new([Cost {
                 amount: captures[3].parse().unwrap(),
-                material: Material::Ore,
+                resource: Resource::Ore,
             }]);
             let obsidian_collector_costs = Box::new([
                 Cost {
                     amount: captures[4].parse().unwrap(),
-                    material: Material::Ore,
+                    resource: Resource::Ore,
                 },
                 Cost {
                     amount: captures[5].parse().unwrap(),
-                    material: Material::Clay,
+                    resource: Resource::Clay,
                 },
             ]);
             let geode_collector_costs = Box::new([
                 Cost {
                     amount: captures[6].parse().unwrap(),
-                    material: Material::Ore,
+                    resource: Resource::Ore,
                 },
                 Cost {
                     amount: captures[7].parse().unwrap(),
-                    material: Material::Obsidian,
+                    resource: Resource::Obsidian,
                 },
             ]);
             Blueprint {
@@ -107,77 +107,77 @@ pub fn part_two(blueprints: &[Blueprint]) -> u32 {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 struct State {
-    ore_state: MaterialState,
-    clay_state: MaterialState,
-    obsidian_state: MaterialState,
-    geode_state: MaterialState,
+    ore_state: ResourceState,
+    clay_state: ResourceState,
+    obsidian_state: ResourceState,
+    geode_state: ResourceState,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-struct MaterialState {
+struct ResourceState {
     amount: u32,
     collector_count: u32,
     collector_built: bool,
 }
 
 impl State {
-    fn material(&self, material: Material) -> &MaterialState {
-        match material {
-            Material::Ore => &self.ore_state,
-            Material::Clay => &self.clay_state,
-            Material::Obsidian => &self.obsidian_state,
-            Material::Geode => &self.geode_state,
+    fn resource(&self, resource: Resource) -> &ResourceState {
+        match resource {
+            Resource::Ore => &self.ore_state,
+            Resource::Clay => &self.clay_state,
+            Resource::Obsidian => &self.obsidian_state,
+            Resource::Geode => &self.geode_state,
         }
     }
 
-    fn material_mut(&mut self, material: Material) -> &mut MaterialState {
-        match material {
-            Material::Ore => &mut self.ore_state,
-            Material::Clay => &mut self.clay_state,
-            Material::Obsidian => &mut self.obsidian_state,
-            Material::Geode => &mut self.geode_state,
+    fn resource_mut(&mut self, resource: Resource) -> &mut ResourceState {
+        match resource {
+            Resource::Ore => &mut self.ore_state,
+            Resource::Clay => &mut self.clay_state,
+            Resource::Obsidian => &mut self.obsidian_state,
+            Resource::Geode => &mut self.geode_state,
         }
     }
 }
 
 fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
-    let materials = [
-        Material::Ore,
-        Material::Clay,
-        Material::Obsidian,
-        Material::Geode,
+    let resources = [
+        Resource::Ore,
+        Resource::Clay,
+        Resource::Obsidian,
+        Resource::Geode,
     ];
-    let max_ore_collectors = materials
+    let max_ore_collectors = resources
         .into_iter()
         .filter_map(|m| {
             blueprint
-                .collector_costs_by_material(m)
+                .collector_costs_by_resource(m)
                 .iter()
-                .filter(|c| c.material == Material::Ore)
+                .filter(|c| c.resource == Resource::Ore)
                 .map(|c| c.amount)
                 .max()
         })
         .max()
         .unwrap();
-    let max_clay_collectors = materials
+    let max_clay_collectors = resources
         .into_iter()
         .filter_map(|m| {
             blueprint
-                .collector_costs_by_material(m)
+                .collector_costs_by_resource(m)
                 .iter()
-                .filter(|c| c.material == Material::Clay)
+                .filter(|c| c.resource == Resource::Clay)
                 .map(|c| c.amount)
                 .max()
         })
         .max()
         .unwrap();
-    let max_obsidian_collectors = materials
+    let max_obsidian_collectors = resources
         .into_iter()
         .filter_map(|m| {
             blueprint
-                .collector_costs_by_material(m)
+                .collector_costs_by_resource(m)
                 .iter()
-                .filter(|c| c.material == Material::Obsidian)
+                .filter(|c| c.resource == Resource::Obsidian)
                 .map(|c| c.amount)
                 .max()
         })
@@ -191,43 +191,43 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         mem::swap(&mut prev_states, &mut states);
         for prev_state in prev_states.drain() {
             let mut next_state = prev_state.clone();
-            for m in materials {
-                next_state.material_mut(m).amount += next_state.material(m).collector_count;
+            for m in resources {
+                next_state.resource_mut(m).amount += next_state.resource(m).collector_count;
             }
-            for m in materials {
-                if next_state.material(m).collector_built {
+            for m in resources {
+                if next_state.resource(m).collector_built {
                     continue;
                 }
-                let collector_count = next_state.material(m).collector_count;
+                let collector_count = next_state.resource(m).collector_count;
                 let capped = match m {
-                    Material::Ore => collector_count >= max_ore_collectors,
-                    Material::Clay => collector_count >= max_clay_collectors,
-                    Material::Obsidian => collector_count >= max_obsidian_collectors,
-                    Material::Geode => false,
+                    Resource::Ore => collector_count >= max_ore_collectors,
+                    Resource::Clay => collector_count >= max_clay_collectors,
+                    Resource::Obsidian => collector_count >= max_obsidian_collectors,
+                    Resource::Geode => false,
                 };
                 if capped {
                     continue;
                 }
-                let costs = blueprint.collector_costs_by_material(m);
+                let costs = blueprint.collector_costs_by_resource(m);
                 if costs
                     .iter()
-                    .all(|c| prev_state.material(c.material).amount >= c.amount)
+                    .all(|c| prev_state.resource(c.resource).amount >= c.amount)
                 {
-                    next_state.material_mut(m).collector_built = true;
+                    next_state.resource_mut(m).collector_built = true;
                     let mut new_state = next_state.clone();
-                    for m in materials {
-                        new_state.material_mut(m).collector_built = false;
+                    for m in resources {
+                        new_state.resource_mut(m).collector_built = false;
                     }
                     for cost in costs.iter() {
-                        new_state.material_mut(cost.material).amount -= cost.amount;
+                        new_state.resource_mut(cost.resource).amount -= cost.amount;
                     }
-                    new_state.material_mut(m).collector_count += 1;
+                    new_state.resource_mut(m).collector_count += 1;
                     states.insert(new_state);
                 }
             }
-            if materials
+            if resources
                 .into_iter()
-                .any(|m| !next_state.material(m).collector_built)
+                .any(|m| !next_state.resource(m).collector_built)
             {
                 states.insert(next_state);
             }
@@ -235,7 +235,7 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
     }
     states
         .iter()
-        .map(|s| s.material(Material::Geode).amount)
+        .map(|s| s.resource(Resource::Geode).amount)
         .max()
         .unwrap()
 }
