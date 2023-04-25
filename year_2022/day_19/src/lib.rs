@@ -37,6 +37,18 @@ pub enum Resource {
     Geode,
 }
 
+impl Resource {
+    fn iter() -> impl Iterator<Item = Resource> {
+        [
+            Resource::Ore,
+            Resource::Clay,
+            Resource::Obsidian,
+            Resource::Geode,
+        ]
+        .into_iter()
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Cost {
     amount: u32,
@@ -154,17 +166,10 @@ impl State {
 }
 
 fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
-    let resources = [
-        Resource::Ore,
-        Resource::Clay,
-        Resource::Obsidian,
-        Resource::Geode,
-    ];
-    let max_ore_collectors = resources
-        .into_iter()
-        .filter_map(|m| {
+    let max_ore_collectors = Resource::iter()
+        .filter_map(|r| {
             blueprint
-                .resource(m)
+                .resource(r)
                 .collector_costs
                 .iter()
                 .filter(|c| c.resource == Resource::Ore)
@@ -173,11 +178,10 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         })
         .max()
         .unwrap();
-    let max_clay_collectors = resources
-        .into_iter()
-        .filter_map(|m| {
+    let max_clay_collectors = Resource::iter()
+        .filter_map(|r| {
             blueprint
-                .resource(m)
+                .resource(r)
                 .collector_costs
                 .iter()
                 .filter(|c| c.resource == Resource::Clay)
@@ -186,11 +190,10 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         })
         .max()
         .unwrap();
-    let max_obsidian_collectors = resources
-        .into_iter()
-        .filter_map(|m| {
+    let max_obsidian_collectors = Resource::iter()
+        .filter_map(|r| {
             blueprint
-                .resource(m)
+                .resource(r)
                 .collector_costs
                 .iter()
                 .filter(|c| c.resource == Resource::Obsidian)
@@ -207,15 +210,15 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
         mem::swap(&mut prev_states, &mut states);
         for prev_state in prev_states.drain() {
             let mut next_state = prev_state.clone();
-            for m in resources {
-                next_state.resource_mut(m).amount += next_state.resource(m).collector_count;
+            for r in Resource::iter() {
+                next_state.resource_mut(r).amount += next_state.resource(r).collector_count;
             }
-            for m in resources {
-                if next_state.resource(m).collector_built {
+            for r in Resource::iter() {
+                if next_state.resource(r).collector_built {
                     continue;
                 }
-                let collector_count = next_state.resource(m).collector_count;
-                let capped = match m {
+                let collector_count = next_state.resource(r).collector_count;
+                let capped = match r {
                     Resource::Ore => collector_count >= max_ore_collectors,
                     Resource::Clay => collector_count >= max_clay_collectors,
                     Resource::Obsidian => collector_count >= max_obsidian_collectors,
@@ -224,27 +227,24 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
                 if capped {
                     continue;
                 }
-                let costs = &blueprint.resource(m).collector_costs;
+                let costs = &blueprint.resource(r).collector_costs;
                 if costs
                     .iter()
                     .all(|c| prev_state.resource(c.resource).amount >= c.amount)
                 {
-                    next_state.resource_mut(m).collector_built = true;
+                    next_state.resource_mut(r).collector_built = true;
                     let mut new_state = next_state.clone();
-                    for m in resources {
-                        new_state.resource_mut(m).collector_built = false;
+                    for r in Resource::iter() {
+                        new_state.resource_mut(r).collector_built = false;
                     }
                     for cost in costs.iter() {
                         new_state.resource_mut(cost.resource).amount -= cost.amount;
                     }
-                    new_state.resource_mut(m).collector_count += 1;
+                    new_state.resource_mut(r).collector_count += 1;
                     states.insert(new_state);
                 }
             }
-            if resources
-                .into_iter()
-                .any(|m| !next_state.resource(m).collector_built)
-            {
+            if Resource::iter().any(|r| !next_state.resource(r).collector_built) {
                 states.insert(next_state);
             }
         }
