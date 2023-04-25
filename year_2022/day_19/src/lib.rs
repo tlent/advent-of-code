@@ -21,19 +21,39 @@ impl Blueprint {
         obsidian_collector_costs: Box<[Cost]>,
         geode_collector_costs: Box<[Cost]>,
     ) -> Self {
+        let all_costs = [
+            ore_collector_costs.iter().copied(),
+            clay_collector_costs.iter().copied(),
+            obsidian_collector_costs.iter().copied(),
+            geode_collector_costs.iter().copied(),
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+        let max_useful_collectors = |r| {
+            all_costs
+                .iter()
+                .filter(|c| c.resource == r)
+                .map(|c| c.amount)
+                .max()
+        };
         Blueprint {
             id,
             ore: ResourceBlueprint {
                 collector_costs: ore_collector_costs,
+                max_useful_collectors: max_useful_collectors(Resource::Ore),
             },
             clay: ResourceBlueprint {
                 collector_costs: clay_collector_costs,
+                max_useful_collectors: max_useful_collectors(Resource::Clay),
             },
             obsidian: ResourceBlueprint {
                 collector_costs: obsidian_collector_costs,
+                max_useful_collectors: max_useful_collectors(Resource::Obsidian),
             },
             geode: ResourceBlueprint {
                 collector_costs: geode_collector_costs,
+                max_useful_collectors: max_useful_collectors(Resource::Geode),
             },
         }
     }
@@ -51,6 +71,7 @@ impl Blueprint {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ResourceBlueprint {
     collector_costs: Box<[Cost]>,
+    max_useful_collectors: Option<u32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -182,42 +203,6 @@ impl State {
 }
 
 fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
-    let max_ore_collectors = Resource::iter()
-        .filter_map(|r| {
-            blueprint
-                .resource(r)
-                .collector_costs
-                .iter()
-                .filter(|c| c.resource == Resource::Ore)
-                .map(|c| c.amount)
-                .max()
-        })
-        .max()
-        .unwrap();
-    let max_clay_collectors = Resource::iter()
-        .filter_map(|r| {
-            blueprint
-                .resource(r)
-                .collector_costs
-                .iter()
-                .filter(|c| c.resource == Resource::Clay)
-                .map(|c| c.amount)
-                .max()
-        })
-        .max()
-        .unwrap();
-    let max_obsidian_collectors = Resource::iter()
-        .filter_map(|r| {
-            blueprint
-                .resource(r)
-                .collector_costs
-                .iter()
-                .filter(|c| c.resource == Resource::Obsidian)
-                .map(|c| c.amount)
-                .max()
-        })
-        .max()
-        .unwrap();
     let mut initial_state = State::default();
     initial_state.ore.collector_count = 1;
     let mut prev_states = HashSet::default();
@@ -234,12 +219,10 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
                     continue;
                 }
                 let collector_count = next_state.resource(r).collector_count;
-                let capped = match r {
-                    Resource::Ore => collector_count >= max_ore_collectors,
-                    Resource::Clay => collector_count >= max_clay_collectors,
-                    Resource::Obsidian => collector_count >= max_obsidian_collectors,
-                    Resource::Geode => false,
-                };
+                let capped = blueprint
+                    .resource(r)
+                    .max_useful_collectors
+                    .map_or(false, |c| collector_count >= c);
                 if capped {
                     continue;
                 }
