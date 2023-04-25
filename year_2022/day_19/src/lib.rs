@@ -93,7 +93,7 @@ pub fn parse_input(input: &str) -> Vec<Blueprint> {
 pub fn part_one(blueprints: &[Blueprint]) -> u32 {
     blueprints
         .iter()
-        .map(|b| dbg!(b.id) * dbg!(find_max_geode_count(b, 24)))
+        .map(|b| b.id * find_max_geode_count(b, 24))
         .sum()
 }
 
@@ -101,7 +101,7 @@ pub fn part_two(blueprints: &[Blueprint]) -> u32 {
     blueprints
         .iter()
         .take(3)
-        .map(|b| dbg!(find_max_geode_count(b, 32)))
+        .map(|b| find_max_geode_count(b, 32))
         .product()
 }
 
@@ -187,7 +187,7 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
     initial_state.ore_state.collector_count = 1;
     let mut prev_states = HashSet::default();
     let mut states = [initial_state].into_iter().collect::<HashSet<_>>();
-    for minute in 1..=time_limit {
+    for _minute in 1..=time_limit {
         mem::swap(&mut prev_states, &mut states);
         for prev_state in prev_states.drain() {
             let mut next_state = prev_state.clone();
@@ -232,7 +232,6 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
                 states.insert(next_state);
             }
         }
-        dbg!(minute, states.len());
     }
     states
         .iter()
