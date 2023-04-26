@@ -4,56 +4,65 @@ pub fn parse_input(input: &str) -> List {
     input.lines().map(|line| line.parse().unwrap()).collect()
 }
 
-pub fn part_one(mut list: List) -> i32 {
-    for i in 0..list.nodes_len() {
-        let value = list.node_value(i);
-        match value.cmp(&0) {
-            std::cmp::Ordering::Greater => list.move_node_forward(i, value as usize),
-            std::cmp::Ordering::Less => list.move_node_backward(i, (-value) as usize),
-            std::cmp::Ordering::Equal => {}
-        }
-    }
+pub fn part_one(mut list: List) -> i64 {
+    mix(&mut list);
     let mut iter = list.iter();
-    [
-        iter.nth(1000).unwrap(),
-        iter.nth(999).unwrap(),
-        iter.nth(999).unwrap(),
-    ]
-    .into_iter()
-    .sum()
+    [1000, 999, 999]
+        .into_iter()
+        .map(|i| iter.nth(i).unwrap())
+        .sum()
 }
 
-pub fn part_two() {
-    todo!()
+pub fn part_two(mut list: List) -> i64 {
+    const MULTIPLIER: i64 = 811_589_153;
+    for node in list.nodes.iter_mut() {
+        node.value *= MULTIPLIER;
+    }
+    for _ in 0..10 {
+        mix(&mut list);
+    }
+    let mut iter = list.iter();
+    [1000, 999, 999]
+        .into_iter()
+        .map(|i| iter.nth(i).unwrap())
+        .sum()
+}
+
+fn mix(list: &mut List) {
+    for i in 0..list.nodes_len() {
+        let value = list.get_node_value(i);
+        // use len - 1 because the moved node has been removed
+        let steps = value.unsigned_abs() as usize % (list.nodes_len() - 1);
+        if steps == 0 {
+            continue;
+        } else if value > 0 {
+            list.move_node_forward(i, steps);
+        } else if value < 0 {
+            list.move_node_backward(i, steps)
+        }
+    }
 }
 
 /// A circular doubly-linked list.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct List {
     nodes: Vec<Node>,
     head: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Node {
-    value: i32,
+    value: i64,
     previous: usize,
     next: usize,
 }
 
 impl List {
-    fn iter(&self) -> Iter {
-        Iter {
-            nodes: &self.nodes,
-            cursor: self.head,
-        }
-    }
-
     fn nodes_len(&self) -> usize {
         self.nodes.len()
     }
 
-    fn node_value(&self, node_index: usize) -> i32 {
+    fn get_node_value(&self, node_index: usize) -> i64 {
         self.nodes[node_index].value
     }
 
@@ -88,10 +97,17 @@ impl List {
         self.nodes[cursor].next = node_index;
         self.nodes[cursor_next].previous = node_index;
     }
+
+    fn iter(&self) -> Iter {
+        Iter {
+            nodes: &self.nodes,
+            cursor: self.head,
+        }
+    }
 }
 
-impl FromIterator<i32> for List {
-    fn from_iter<T: IntoIterator<Item = i32>>(iter: T) -> Self {
+impl FromIterator<i64> for List {
+    fn from_iter<T: IntoIterator<Item = i64>>(iter: T) -> Self {
         let mut nodes = iter
             .into_iter()
             .enumerate()
@@ -115,7 +131,7 @@ pub struct Iter<'a> {
 }
 
 impl<'a> Iterator for Iter<'a> {
-    type Item = &'a i32;
+    type Item = &'a i64;
 
     fn next(&mut self) -> Option<Self::Item> {
         let value = &self.nodes[self.cursor].value;
@@ -130,11 +146,13 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        todo!()
+        let list = parse_input(INPUT);
+        assert_eq!(part_one(list), 15297);
     }
 
     #[test]
     fn test_part_two() {
-        todo!()
+        let list = parse_input(INPUT);
+        assert_eq!(part_two(list), 2_897_373_276_210);
     }
 }
