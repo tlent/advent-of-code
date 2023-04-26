@@ -9,19 +9,11 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("day_20::part_one", |b| {
-        b.iter_batched(
-            || parse_result.clone(),
-            |list| day_20::part_one(black_box(list)),
-            criterion::BatchSize::SmallInput,
-        );
+        b.iter(|| day_20::part_one(black_box(&parse_result)));
     });
 
     c.bench_function("day_20::part_two", |b| {
-        b.iter_batched(
-            || parse_result.clone(),
-            |list| day_20::part_two(black_box(list)),
-            criterion::BatchSize::SmallInput,
-        );
+        b.iter(|| day_20::part_two(black_box(&parse_result)));
     });
 }
 
