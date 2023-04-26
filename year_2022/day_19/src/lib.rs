@@ -1,6 +1,6 @@
 use regex::Regex;
 use rustc_hash::FxHashSet as HashSet;
-use std::mem;
+use std::cmp;
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -72,56 +72,56 @@ pub fn part_two(blueprints: &[Blueprint]) -> u32 {
 }
 
 fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
-    let mut initial_state = State::default();
-    initial_state.ore.collector_count = 1;
-    let mut prev_states = HashSet::default();
-    let mut states = [initial_state].into_iter().collect::<HashSet<_>>();
-    for _minute in 1..=time_limit {
-        mem::swap(&mut prev_states, &mut states);
-        for prev_state in prev_states.drain() {
-            let mut next_state = prev_state.clone();
-            for r in Resource::iter() {
-                next_state.resource_mut(r).amount += next_state.resource(r).collector_count;
+    let initial_state = State {
+        remaining_time: time_limit,
+        ore: ResourceState {
+            amount: 0,
+            collector_count: 1,
+        },
+        ..Default::default()
+    };
+    let mut max_geode_count = 0;
+    let mut seen = HashSet::default();
+    let mut states = vec![initial_state];
+    while let Some(state) = states.pop() {
+        for r in Resource::iter() {
+            let collector_count = state.resource(r).collector_count;
+            let ResourceBlueprint {
+                collector_costs,
+                max_useful_collectors,
+            } = blueprint.resource(r);
+            let capped = max_useful_collectors.map_or(false, |c| collector_count >= c);
+            if capped {
+                continue;
             }
-            for r in Resource::iter() {
-                if next_state.resource(r).collector_built {
-                    continue;
-                }
-                let collector_count = next_state.resource(r).collector_count;
-                let capped = blueprint
-                    .resource(r)
-                    .max_useful_collectors
-                    .map_or(false, |c| collector_count >= c);
-                if capped {
-                    continue;
-                }
-                let costs = &blueprint.resource(r).collector_costs;
-                if costs
-                    .iter()
-                    .all(|c| prev_state.resource(c.resource).amount >= c.amount)
-                {
-                    next_state.resource_mut(r).collector_built = true;
-                    let mut new_state = next_state.clone();
-                    for r in Resource::iter() {
-                        new_state.resource_mut(r).collector_built = false;
-                    }
-                    for cost in costs.iter() {
-                        new_state.resource_mut(cost.resource).amount -= cost.amount;
-                    }
-                    new_state.resource_mut(r).collector_count += 1;
-                    states.insert(new_state);
-                }
+            let time_to_afford = state.time_to_afford(collector_costs);
+            if time_to_afford.is_none() {
+                continue;
             }
-            if Resource::iter().any(|r| !next_state.resource(r).collector_built) {
-                states.insert(next_state);
+            let time_to_build = 1 + time_to_afford.unwrap();
+            if time_to_build >= state.remaining_time {
+                let final_geode_count =
+                    state.geode.amount + state.remaining_time * state.geode.collector_count;
+                max_geode_count = cmp::max(max_geode_count, final_geode_count);
+                continue;
+            }
+            let mut new_state = state.clone();
+            new_state.remaining_time -= time_to_build;
+            for r in Resource::iter() {
+                new_state.resource_mut(r).amount +=
+                    time_to_build * state.resource(r).collector_count;
+            }
+            for cost in collector_costs.iter() {
+                new_state.resource_mut(cost.resource).amount -= cost.amount;
+            }
+            new_state.resource_mut(r).collector_count += 1;
+            if !seen.contains(&new_state) {
+                seen.insert(new_state.clone());
+                states.push(new_state);
             }
         }
     }
-    states
-        .iter()
-        .map(|s| s.resource(Resource::Geode).amount)
-        .max()
-        .unwrap()
+    max_geode_count
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -222,6 +222,7 @@ impl Blueprint {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 struct State {
+    remaining_time: u32,
     ore: ResourceState,
     clay: ResourceState,
     obsidian: ResourceState,
@@ -232,7 +233,6 @@ struct State {
 struct ResourceState {
     amount: u32,
     collector_count: u32,
-    collector_built: bool,
 }
 
 impl State {
@@ -252,6 +252,29 @@ impl State {
             Resource::Obsidian => &mut self.obsidian,
             Resource::Geode => &mut self.geode,
         }
+    }
+
+    fn time_to_afford(&self, costs: &[Cost]) -> Option<u32> {
+        let times = costs
+            .iter()
+            .map(|c| {
+                let amount = self.resource(c.resource).amount;
+                let collector_count = self.resource(c.resource).collector_count;
+                if amount >= c.amount {
+                    return Some(0);
+                } else if collector_count == 0 {
+                    return None;
+                }
+                let needed = c.amount - amount;
+                let t = if needed % collector_count == 0 {
+                    needed / collector_count
+                } else {
+                    needed / collector_count + 1
+                };
+                Some(t)
+            })
+            .collect::<Option<Vec<_>>>()?;
+        times.into_iter().max()
     }
 }
 
