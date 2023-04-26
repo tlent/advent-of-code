@@ -98,6 +98,10 @@ fn find_max_geode_count(blueprint: &Blueprint, time_limit: u32) -> u32 {
             if time_to_afford.is_none() {
                 continue;
             }
+            let upper_bound = state.upper_bound_geode_count();
+            if upper_bound < max_geode_count {
+                continue;
+            }
             let time_to_build = 1 + time_to_afford.unwrap();
             if time_to_build >= state.remaining_time {
                 let final_geode_count =
@@ -275,6 +279,14 @@ impl State {
             })
             .collect::<Option<Vec<_>>>()?;
         times.into_iter().max()
+    }
+
+    fn upper_bound_geode_count(&self) -> u32 {
+        let mut upper_bound = self.geode.amount;
+        for m in 0..self.remaining_time {
+            upper_bound += self.geode.collector_count + m;
+        }
+        upper_bound
     }
 }
 
