@@ -4,20 +4,37 @@ pub fn parse_input(input: &str) -> List {
     input.lines().map(|line| line.parse().unwrap()).collect()
 }
 
-pub fn part_one() -> () {
-    todo!()
+pub fn part_one(mut list: List) -> i32 {
+    for i in 0..list.nodes_len() {
+        let value = list.node_value(i);
+        match value.cmp(&0) {
+            std::cmp::Ordering::Greater => list.move_node_forward(i, value as usize),
+            std::cmp::Ordering::Less => list.move_node_backward(i, (-value) as usize),
+            std::cmp::Ordering::Equal => {}
+        }
+    }
+    let mut iter = list.iter();
+    [
+        iter.nth(1000).unwrap(),
+        iter.nth(999).unwrap(),
+        iter.nth(999).unwrap(),
+    ]
+    .into_iter()
+    .sum()
 }
 
-pub fn part_two() -> () {
+pub fn part_two() {
     todo!()
 }
 
 /// A circular doubly-linked list.
+#[derive(Debug)]
 pub struct List {
     nodes: Vec<Node>,
     head: usize,
 }
 
+#[derive(Debug)]
 struct Node {
     value: i32,
     previous: usize,
@@ -30,6 +47,46 @@ impl List {
             nodes: &self.nodes,
             cursor: self.head,
         }
+    }
+
+    fn nodes_len(&self) -> usize {
+        self.nodes.len()
+    }
+
+    fn node_value(&self, node_index: usize) -> i32 {
+        self.nodes[node_index].value
+    }
+
+    fn move_node_forward(&mut self, node_index: usize, steps: usize) {
+        let prev_node = self.nodes[node_index].previous;
+        let next_node = self.nodes[node_index].next;
+        self.nodes[prev_node].next = next_node;
+        self.nodes[next_node].previous = prev_node;
+        let mut cursor = node_index;
+        for _ in 0..steps {
+            cursor = self.nodes[cursor].next;
+        }
+        let cursor_next = self.nodes[cursor].next;
+        self.nodes[node_index].previous = cursor;
+        self.nodes[node_index].next = cursor_next;
+        self.nodes[cursor].next = node_index;
+        self.nodes[cursor_next].previous = node_index;
+    }
+
+    fn move_node_backward(&mut self, node_index: usize, steps: usize) {
+        let prev_node = self.nodes[node_index].previous;
+        let next_node = self.nodes[node_index].next;
+        self.nodes[prev_node].next = next_node;
+        self.nodes[next_node].previous = prev_node;
+        let mut cursor = node_index;
+        for _ in 0..=steps {
+            cursor = self.nodes[cursor].previous;
+        }
+        let cursor_next = self.nodes[cursor].next;
+        self.nodes[node_index].previous = cursor;
+        self.nodes[node_index].next = cursor_next;
+        self.nodes[cursor].next = node_index;
+        self.nodes[cursor_next].previous = node_index;
     }
 }
 
