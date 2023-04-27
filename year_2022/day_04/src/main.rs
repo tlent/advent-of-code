@@ -1,8 +1,24 @@
 use day_04::{self, INPUT};
+use std::env;
 
 fn main() {
-    let pairs = day_04::parse_input(INPUT).unwrap();
-    let part_one = day_04::part_one(&pairs);
-    let part_two = day_04::part_two(&pairs);
-    println!("{part_one}\n{part_two}");
+    let parse_result = day_04::parse_input(INPUT).unwrap();
+    match env::args().nth(1).as_deref() {
+        Some("all") => {
+            let part_one = day_04::part_one(&parse_result);
+            println!("{part_one}");
+            let part_two = day_04::part_two(&parse_result);
+            println!("{part_two}");
+        }
+        Some("parse") => {}
+        Some("one") => {
+            let part_one = day_04::part_one(&parse_result);
+            println!("{part_one}");
+        }
+        Some("two") => {
+            let part_two = day_04::part_two(&parse_result);
+            println!("{part_two}");
+        }
+        _ => println!("Invalid argument: must be one of all, parse, one, or two"),
+    }
 }

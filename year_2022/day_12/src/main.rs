@@ -1,8 +1,24 @@
 use day_12::{self, INPUT};
+use std::env;
 
 fn main() {
-    let grid = day_12::parse_input(INPUT);
-    let part_one = day_12::part_one(&grid);
-    let part_two = day_12::part_two(&grid);
-    println!("{part_one}\n{part_two}");
+    let parse_result = day_12::parse_input(INPUT);
+    match env::args().nth(1).as_deref() {
+        Some("all") => {
+            let part_one = day_12::part_one(&parse_result);
+            println!("{part_one}");
+            let part_two = day_12::part_two(&parse_result);
+            println!("{part_two}");
+        }
+        Some("parse") => {}
+        Some("one") => {
+            let part_one = day_12::part_one(&parse_result);
+            println!("{part_one}");
+        }
+        Some("two") => {
+            let part_two = day_12::part_two(&parse_result);
+            println!("{part_two}");
+        }
+        _ => println!("Invalid argument: must be one of all, parse, one, or two"),
+    }
 }
