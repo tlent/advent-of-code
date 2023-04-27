@@ -1,3 +1,5 @@
+use std::ptr;
+
 pub const INPUT: &str = include_str!("../input.txt");
 
 pub fn parse_input(input: &str) -> Vec<i64> {
@@ -21,20 +23,17 @@ pub fn part_two(numbers: &[i64]) -> i64 {
 }
 
 fn mix<'a>(numbers: &'a [i64], references: &mut Vec<&'a i64>) {
-    for value in numbers {
-        if *value == 0 {
+    for n in numbers {
+        if *n == 0 {
             continue;
         }
-        let position = references
-            .iter()
-            .position(|&r| std::ptr::eq(r, value))
-            .unwrap();
-        references.remove(position);
-        let mut new_position = (position as i64 + value) % references.len() as i64;
-        if new_position.is_negative() {
-            new_position += references.len() as i64;
+        let index = references.iter().position(|&r| ptr::eq(r, n)).unwrap();
+        references.remove(index);
+        let mut new_index = (index as i64 + n) % references.len() as i64;
+        if new_index.is_negative() {
+            new_index += references.len() as i64;
         }
-        references.insert(new_position as usize, value);
+        references.insert(new_index as usize, n);
     }
 }
 
