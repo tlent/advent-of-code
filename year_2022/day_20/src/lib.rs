@@ -5,29 +5,19 @@ pub fn parse_input(input: &str) -> Vec<i64> {
 }
 
 pub fn part_one(numbers: &[i64]) -> i64 {
-    let len = numbers.len();
     let mut references = numbers.iter().collect::<Vec<_>>();
     mix(numbers, &mut references);
-    let zero_position = references.iter().position(|&r| *r == 0).unwrap();
-    [1000, 2000, 3000]
-        .into_iter()
-        .map(|i| *references[(zero_position + i) % len])
-        .sum()
+    coordinates_sum(&references)
 }
 
 pub fn part_two(numbers: &[i64]) -> i64 {
     const MULTIPLIER: i64 = 811_589_153;
-    let len = numbers.len();
     let numbers = numbers.iter().map(|v| v * MULTIPLIER).collect::<Vec<_>>();
     let mut references = numbers.iter().collect::<Vec<_>>();
     for _ in 0..10 {
         mix(&numbers, &mut references);
     }
-    let zero_position = references.iter().position(|&r| *r == 0).unwrap();
-    [1000, 2000, 3000]
-        .into_iter()
-        .map(|i| *references[(zero_position + i) % len])
-        .sum()
+    coordinates_sum(&references)
 }
 
 fn mix<'a>(numbers: &'a [i64], references: &mut Vec<&'a i64>) {
@@ -46,6 +36,14 @@ fn mix<'a>(numbers: &'a [i64], references: &mut Vec<&'a i64>) {
         }
         references.insert(new_position as usize, value);
     }
+}
+
+fn coordinates_sum(references: &[&i64]) -> i64 {
+    let zero_position = references.iter().position(|&r| *r == 0).unwrap();
+    [1000, 2000, 3000]
+        .into_iter()
+        .map(|i| *references[(zero_position + i) % references.len()])
+        .sum()
 }
 
 #[cfg(test)]
