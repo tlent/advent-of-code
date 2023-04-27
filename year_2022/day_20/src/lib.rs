@@ -40,15 +40,11 @@ fn mix<'a>(numbers: &'a [i64], positions: &mut Vec<&'a i64>) {
             .position(|&p| std::ptr::eq(p, value))
             .unwrap();
         positions.remove(position);
-        let steps = value.unsigned_abs() as usize % positions.len();
-        let new_position = if *value > 0 {
-            (position + steps) % positions.len()
-        } else if position > steps {
-            position - steps
-        } else {
-            positions.len() - (steps - position)
-        };
-        positions.insert(new_position, value);
+        let mut new_position = (position as i64 + value) % positions.len() as i64;
+        if new_position.is_negative() {
+            new_position += positions.len() as i64;
+        }
+        positions.insert(new_position as usize, value);
     }
 }
 
