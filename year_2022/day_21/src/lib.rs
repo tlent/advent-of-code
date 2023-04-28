@@ -87,7 +87,8 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        todo!()
+        let monkeys = parse_input(INPUT);
+        assert_eq!(part_one(&monkeys), 364_367_103_397_416);
     }
 
     #[test]
