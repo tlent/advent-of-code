@@ -1,7 +1,15 @@
 pub const INPUT: &str = include_str!("../input.txt");
 
-pub struct Map<'a>(&'a str);
+pub struct Map(Vec<Vec<Tile>>);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tile {
+    None,
+    Open,
+    Wall,
+}
+
+#[derive(Debug)]
 pub enum PathStep {
     Forward(usize),
     Left,
@@ -9,8 +17,22 @@ pub enum PathStep {
 }
 
 pub fn parse_input(input: &str) -> (Map, Vec<PathStep>) {
-    let (map_str, mut path_str) = input.trim().split_once("\n\n").unwrap();
-    let map = Map(map_str);
+    let (map_str, mut path_str) = input.split_once("\n\n").unwrap();
+    let tiles = map_str
+        .lines()
+        .map(|line| {
+            line.chars()
+                .map(|c| match c {
+                    ' ' => Tile::None,
+                    '.' => Tile::Open,
+                    '#' => Tile::Wall,
+                    _ => panic!("invalid map char"),
+                })
+                .collect()
+        })
+        .collect();
+    let map = Map(tiles);
+    path_str = path_str.trim();
     let mut path = vec![];
     while !path_str.is_empty() {
         let end_index = path_str.find(['L', 'R']).unwrap_or(path_str.len());
@@ -30,21 +52,123 @@ pub fn parse_input(input: &str) -> (Map, Vec<PathStep>) {
     (map, path)
 }
 
-pub fn part_one() -> () {
+pub fn part_one(map: &Map, path: &[PathStep]) -> i32 {
+    let start_x = map.first_open_tile_position(1) as i32;
+    let mut position = (start_x, 1);
+    dbg!(position);
+    let mut facing = Direction::Right;
+    for step in path {
+        match dbg!(step) {
+            PathStep::Forward(n) => position = dbg!(map.find_new_position(position, facing, *n)),
+            PathStep::Left => facing = dbg!(facing.turn_left()),
+            PathStep::Right => facing = dbg!(facing.turn_right()),
+        }
+    }
+    let (column, row) = position;
+    1000 * row
+        + 4 * column
+        + match facing {
+            Direction::Right => 0,
+            Direction::Down => 1,
+            Direction::Left => 2,
+            Direction::Up => 3,
+        }
+}
+
+pub fn part_two(map: &Map, path: &[PathStep]) -> i32 {
     todo!()
 }
 
-pub fn part_two() -> () {
-    todo!()
-}
-
-type Position = (i32, i32);
-
+#[derive(Debug, Clone, Copy)]
 enum Direction {
     Up,
     Left,
     Right,
     Down,
+}
+
+impl Map {
+    fn first_open_tile_position(&self, row: usize) -> usize {
+        self.0[row - 1]
+            .iter()
+            .position(|&t| t == Tile::Open)
+            .unwrap()
+            + 1
+    }
+
+    fn find_new_position(
+        &self,
+        (mut x, mut y): (i32, i32),
+        facing: Direction,
+        steps: usize,
+    ) -> (i32, i32) {
+        let rows = &self.0;
+        let (dx, dy) = match facing {
+            Direction::Up => (0, -1),
+            Direction::Left => (-1, 0),
+            Direction::Right => (1, 0),
+            Direction::Down => (0, 1),
+        };
+        for _ in 0..steps {
+            let next_x = (x + dx).rem_euclid(rows[0].len() as i32);
+            let next_y = (y + dy).rem_euclid(rows.len() as i32);
+            let next_tile = rows[next_y as usize][next_x as usize];
+            match next_tile {
+                Tile::Open => {
+                    x = next_x;
+                    y = next_y;
+                }
+                Tile::Wall => break,
+                Tile::None => {
+                    dbg!("c");
+                    let (dx, dy) = match facing.turn_around() {
+                        Direction::Up => (0, -1),
+                        Direction::Left => (-1, 0),
+                        Direction::Right => (1, 0),
+                        Direction::Down => (0, 1),
+                    };
+                    let mut next_x = (x + dx).rem_euclid(rows[0].len() as i32);
+                    let mut next_y = (y + dy).rem_euclid(rows.len() as i32);
+                    while rows[next_y as usize][next_x as usize] != Tile::None {
+                        x = next_x;
+                        y = next_y;
+                        next_x = (x + dx).rem_euclid(rows[0].len() as i32);
+                        next_y = (y + dy).rem_euclid(rows.len() as i32);
+                    }
+                }
+            }
+        }
+        (x, y)
+    }
+}
+
+impl Direction {
+    fn turn_left(&self) -> Self {
+        match self {
+            Self::Up => Self::Left,
+            Self::Left => Self::Down,
+            Self::Right => Self::Up,
+            Self::Down => Self::Right,
+        }
+    }
+
+    fn turn_right(&self) -> Self {
+        match self {
+            Self::Up => Self::Right,
+            Self::Left => Self::Up,
+            Self::Right => Self::Down,
+            Self::Down => Self::Left,
+        }
+    }
+
+    fn turn_around(&self) -> Self {
+        match self {
+            Self::Up => Self::Down,
+            Self::Left => Self::Right,
+            Self::Right => Self::Left,
+            Self::Down => Self::Up,
+        }
+    }
 }
 
 #[cfg(test)]
