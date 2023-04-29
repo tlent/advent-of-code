@@ -29,10 +29,7 @@ fn mix<'a>(numbers: &'a [i64], references: &mut Vec<&'a i64>) {
         }
         let index = references.iter().position(|&r| ptr::eq(r, n)).unwrap();
         references.remove(index);
-        let mut new_index = (index as i64 + n) % references.len() as i64;
-        if new_index.is_negative() {
-            new_index += references.len() as i64;
-        }
+        let new_index = (index as i64 + n).rem_euclid(references.len() as i64);
         references.insert(new_index as usize, n);
     }
 }
