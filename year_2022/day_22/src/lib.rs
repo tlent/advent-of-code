@@ -65,6 +65,7 @@ pub fn part_one(map: &Map, path: &[PathStep]) -> i32 {
         }
     }
     let (column, row) = position;
+    dbg!(row, column, facing);
     1000 * row
         + 4 * column
         + match facing {
@@ -110,9 +111,14 @@ impl Map {
             Direction::Down => (0, 1),
         };
         for _ in 0..steps {
-            let next_x = (x + dx).rem_euclid(rows[0].len() as i32);
-            let next_y = (y + dy).rem_euclid(rows.len() as i32);
-            let next_tile = rows[next_y as usize][next_x as usize];
+            let next_x = x + dx;
+            let next_y = y + dy;
+            let next_tile = if self.in_bounds((next_x, next_y)) {
+                rows[next_y as usize][next_x as usize]
+            } else {
+                Tile::None
+            };
+            dbg!((next_x, next_y));
             match next_tile {
                 Tile::Open => {
                     x = next_x;
@@ -120,25 +126,32 @@ impl Map {
                 }
                 Tile::Wall => break,
                 Tile::None => {
-                    dbg!("c");
+                    // TODO: Move this outside of match, only reach match with correct next values
                     let (dx, dy) = match facing.turn_around() {
                         Direction::Up => (0, -1),
                         Direction::Left => (-1, 0),
                         Direction::Right => (1, 0),
                         Direction::Down => (0, 1),
                     };
-                    let mut next_x = (x + dx).rem_euclid(rows[0].len() as i32);
-                    let mut next_y = (y + dy).rem_euclid(rows.len() as i32);
-                    while rows[next_y as usize][next_x as usize] != Tile::None {
+                    let mut next_x = x + dx;
+                    let mut next_y = y + dy;
+                    while self.in_bounds((next_x, next_y))
+                        && rows[next_y as usize][next_x as usize] != Tile::None
+                    {
                         x = next_x;
                         y = next_y;
-                        next_x = (x + dx).rem_euclid(rows[0].len() as i32);
-                        next_y = (y + dy).rem_euclid(rows.len() as i32);
+                        next_x = x + dx;
+                        next_y = y + dy;
                     }
                 }
             }
         }
         (x, y)
+    }
+
+    fn in_bounds(&self, (x, y): (i32, i32)) -> bool {
+        let rows = &self.0;
+        (0..rows.len() as i32).contains(&y) && (0..rows[y as usize].len() as i32).contains(&x)
     }
 }
 
