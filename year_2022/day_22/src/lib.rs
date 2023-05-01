@@ -195,31 +195,16 @@ impl<'a> MapCursor<'a> {
         self.current_tile.tile
     }
 
-    fn up(&self) -> Self {
+    fn next(&self, direction: Direction) -> Self {
+        let index = match direction {
+            Direction::Up => self.current_tile.next_up,
+            Direction::Left => self.current_tile.next_left,
+            Direction::Right => self.current_tile.next_right,
+            Direction::Down => self.current_tile.next_down,
+        };
         Self {
             map: self.map,
-            current_tile: &self.map.0[self.current_tile.next_up],
-        }
-    }
-
-    fn left(&self) -> Self {
-        Self {
-            map: self.map,
-            current_tile: &self.map.0[self.current_tile.next_left],
-        }
-    }
-
-    fn right(&self) -> Self {
-        Self {
-            map: self.map,
-            current_tile: &self.map.0[self.current_tile.next_right],
-        }
-    }
-
-    fn down(&self) -> Self {
-        Self {
-            map: self.map,
-            current_tile: &self.map.0[self.current_tile.next_down],
+            current_tile: &self.map.0[index],
         }
     }
 }
