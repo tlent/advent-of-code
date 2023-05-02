@@ -1,21 +1,10 @@
+use std::cmp::Ordering;
+
 pub const INPUT: &str = include_str!("../input.txt");
 
 pub fn parse_input(input: &str) -> (Map, Vec<PathStep>) {
     let (map_str, mut path_str) = input.split_once("\n\n").unwrap();
-    let tiles = map_str
-        .lines()
-        .map(|line| {
-            line.chars()
-                .map(|c| match c {
-                    ' ' => Tile::None,
-                    '.' => Tile::Open,
-                    '#' => Tile::Wall,
-                    _ => panic!("invalid map char"),
-                })
-                .collect()
-        })
-        .collect();
-    let map = Map(tiles);
+    let map = Map::from_input(map_str);
     path_str = path_str.trim();
     let mut path = vec![];
     while !path_str.is_empty() {
@@ -36,20 +25,25 @@ pub fn parse_input(input: &str) -> (Map, Vec<PathStep>) {
     (map, path)
 }
 
-pub fn part_one(map: &Map, path: &[PathStep]) -> i32 {
-    let start_x = map.first_open_tile_position(1) as i32;
-    let mut position = (start_x, 1);
-    dbg!(position);
+pub fn part_one(map: &Map, path: &[PathStep]) -> usize {
+    let mut cursor = map.cursor();
     let mut facing = Direction::Right;
     for step in path {
-        match dbg!(step) {
-            PathStep::Forward(n) => position = dbg!(map.find_new_position(position, facing, *n)),
-            PathStep::Left => facing = dbg!(facing.turn_left()),
-            PathStep::Right => facing = dbg!(facing.turn_right()),
+        match step {
+            PathStep::Forward(n) => {
+                for _ in 0..*n {
+                    let next = cursor.next(facing);
+                    if next.tile() == Tile::Wall {
+                        break;
+                    }
+                    cursor = next;
+                }
+            }
+            PathStep::Left => facing = facing.turn_left(),
+            PathStep::Right => facing = facing.turn_right(),
         }
     }
-    let (column, row) = position;
-    dbg!(row, column, facing);
+    let (column, row) = cursor.position();
     1000 * row
         + 4 * column
         + match facing {
@@ -60,7 +54,7 @@ pub fn part_one(map: &Map, path: &[PathStep]) -> i32 {
         }
 }
 
-pub fn part_two(map: &Map, path: &[PathStep]) -> i32 {
+pub fn part_two(map: &Map, path: &[PathStep]) -> usize {
     todo!()
 }
 
@@ -89,20 +83,24 @@ impl Map {
         let mut column_prevs: Vec<Option<usize>> = vec![];
         let mut column_segment_starts: Vec<Option<usize>> = vec![];
         for (i, line) in lines.iter().enumerate() {
-            if line.len() > column_prevs.len() {
-                column_prevs.resize_with(line.len(), Default::default);
-                column_segment_starts.resize_with(line.len(), Default::default);
-            } else if line.len() < column_prevs.len() {
-                let iter = column_segment_starts[line.len()..]
-                    .iter_mut()
-                    .zip(column_prevs[line.len()..].iter_mut());
-                for (start_mut, prev_mut) in iter {
-                    if let Some(start) = start_mut.take() {
-                        let prev = prev_mut.take().unwrap();
-                        tiles[start].next_up = prev;
-                        tiles[prev].next_down = start;
+            match line.len().cmp(&column_prevs.len()) {
+                Ordering::Less => {
+                    let iter = column_segment_starts[line.len()..]
+                        .iter_mut()
+                        .zip(column_prevs[line.len()..].iter_mut());
+                    for (start_mut, prev_mut) in iter {
+                        if let Some(start) = start_mut.take() {
+                            let prev = prev_mut.take().unwrap();
+                            tiles[start].next_up = prev;
+                            tiles[prev].next_down = start;
+                        }
                     }
                 }
+                Ordering::Greater => {
+                    column_prevs.resize_with(line.len(), Default::default);
+                    column_segment_starts.resize_with(line.len(), Default::default);
+                }
+                Ordering::Equal => {}
             }
             let mut row_prev: Option<usize> = None;
             let mut row_segment_start: Option<usize> = None;
@@ -143,10 +141,14 @@ impl Map {
                 if let Some(p) = *column_prev {
                     tiles[p].next_down = index;
                 }
-                row_prev.insert(index);
-                row_segment_start.get_or_insert(index);
-                column_prev.insert(index);
-                column_segment_start.get_or_insert(index);
+                row_prev = Some(index);
+                if row_segment_start.is_none() {
+                    row_segment_start = Some(index);
+                }
+                *column_prev = Some(index);
+                if column_segment_start.is_none() {
+                    *column_segment_start = Some(index);
+                }
             }
             let start = row_segment_start.unwrap();
             let prev = row_prev.unwrap();
@@ -243,7 +245,8 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        todo!()
+        let (map, path) = parse_input(INPUT);
+        assert_eq!(part_one(&map, &path), 65368);
     }
 
     #[test]
