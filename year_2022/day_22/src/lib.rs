@@ -1,10 +1,10 @@
-use std::cmp::Ordering;
-
 pub const INPUT: &str = include_str!("../input.txt");
 
-pub fn parse_input(input: &str) -> (Map, Vec<PathStep>) {
+const CUBE_FACE_SIZE: usize = 50;
+
+pub fn parse_input(input: &str) -> (MapRegions, Vec<PathStep>) {
     let (map_str, mut path_str) = input.split_once("\n\n").unwrap();
-    let map = Map::from_input(map_str);
+    let map_regions = MapRegions::from_input(map_str);
     path_str = path_str.trim();
     let mut path = vec![];
     while !path_str.is_empty() {
@@ -22,10 +22,20 @@ pub fn parse_input(input: &str) -> (Map, Vec<PathStep>) {
             path_str = &path_str[1..];
         }
     }
-    (map, path)
+    (map_regions, path)
 }
 
-pub fn part_one(map: &Map, path: &[PathStep]) -> usize {
+pub fn part_one(map_regions: &MapRegions, path: &[PathStep]) -> usize {
+    let map = map_regions.link_as_wrapping();
+    solve(&map, path)
+}
+
+pub fn part_two(map_regions: &MapRegions, path: &[PathStep]) -> usize {
+    let map = map_regions.link_as_cube();
+    solve(&map, path)
+}
+
+fn solve(map: &Map, path: &[PathStep]) -> usize {
     let mut cursor = map.cursor();
     let mut facing = Direction::Right;
     for step in path {
@@ -54,10 +64,6 @@ pub fn part_one(map: &Map, path: &[PathStep]) -> usize {
         }
 }
 
-pub fn part_two(map: &Map, path: &[PathStep]) -> usize {
-    todo!()
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tile {
     Open,
@@ -71,101 +77,106 @@ pub enum PathStep {
     Right,
 }
 
-pub struct Map(Vec<MapTile>);
+#[derive(Debug)]
+pub struct MapRegionTile {
+    position: (usize, usize),
+    tile: Tile,
+    next_up: Option<usize>,
+    next_left: Option<usize>,
+    next_right: Option<usize>,
+    next_down: Option<usize>,
+}
 
-impl Map {
+pub struct MapRegion {
+    position: (u8, u8),
+    tiles: [[MapRegionTile; CUBE_FACE_SIZE]; CUBE_FACE_SIZE],
+}
+
+pub struct MapRegions(Vec<MapRegion>);
+
+impl MapRegions {
     fn from_input(input: &str) -> Self {
         let lines = input
             .lines()
-            .map(|line| line.chars().collect::<Vec<_>>())
+            .map(|l| l.bytes().collect::<Vec<_>>())
             .collect::<Vec<_>>();
-        let mut tiles: Vec<MapTile> = vec![];
-        let mut column_prevs: Vec<Option<usize>> = vec![];
-        let mut column_segment_starts: Vec<Option<usize>> = vec![];
-        for (i, line) in lines.iter().enumerate() {
-            match line.len().cmp(&column_prevs.len()) {
-                Ordering::Less => {
-                    let iter = column_segment_starts[line.len()..]
-                        .iter_mut()
-                        .zip(column_prevs[line.len()..].iter_mut());
-                    for (start_mut, prev_mut) in iter {
-                        if let Some(start) = start_mut.take() {
-                            let prev = prev_mut.take().unwrap();
-                            tiles[start].next_up = prev;
-                            tiles[prev].next_down = start;
-                        }
+        let regions = lines
+            .chunks_exact(CUBE_FACE_SIZE)
+            .enumerate()
+            .flat_map(|(region_y, rows)| {
+                let width = rows[0].len();
+                (0..width / CUBE_FACE_SIZE).filter_map(move |region_x| {
+                    let region_start_x = region_x * CUBE_FACE_SIZE;
+                    let region_end_x = region_start_x + CUBE_FACE_SIZE;
+                    if rows[0][region_start_x].is_ascii_whitespace() {
+                        return None;
                     }
-                }
-                Ordering::Greater => {
-                    column_prevs.resize_with(line.len(), Default::default);
-                    column_segment_starts.resize_with(line.len(), Default::default);
-                }
-                Ordering::Equal => {}
-            }
-            let mut row_prev: Option<usize> = None;
-            let mut row_segment_start: Option<usize> = None;
-            for (j, &c) in line.iter().enumerate() {
-                let column_prev = &mut column_prevs[j];
-                let column_segment_start = &mut column_segment_starts[j];
-                if c == ' ' {
-                    if let Some(start) = row_segment_start.take() {
-                        let prev = row_prev.take().unwrap();
-                        tiles[start].next_left = prev;
-                        tiles[prev].next_right = start;
-                    }
-                    if let Some(start) = column_segment_start.take() {
-                        let prev = column_prev.take().unwrap();
-                        tiles[start].next_up = prev;
-                        tiles[prev].next_down = start;
-                    }
-                    continue;
-                }
-                let tile = match c {
-                    '.' => Tile::Open,
-                    '#' => Tile::Wall,
-                    _ => panic!("invalid map char {c}"),
-                };
-                let map_tile = MapTile {
-                    position: (j + 1, i + 1),
-                    tile,
-                    next_left: row_prev.unwrap_or_default(),
-                    next_up: column_prev.unwrap_or_default(),
-                    next_right: Default::default(),
-                    next_down: Default::default(),
-                };
-                let index = tiles.len();
-                tiles.push(map_tile);
-                if let Some(p) = row_prev {
-                    tiles[p].next_right = index;
-                }
-                if let Some(p) = *column_prev {
-                    tiles[p].next_down = index;
-                }
-                row_prev = Some(index);
-                if row_segment_start.is_none() {
-                    row_segment_start = Some(index);
-                }
-                *column_prev = Some(index);
-                if column_segment_start.is_none() {
-                    *column_segment_start = Some(index);
-                }
-            }
-            let start = row_segment_start.unwrap();
-            let prev = row_prev.unwrap();
-            tiles[start].next_left = prev;
-            tiles[prev].next_right = start;
-        }
-        for (start, prev) in column_segment_starts.into_iter().zip(column_prevs) {
-            if let Some(start) = start {
-                let prev = prev.unwrap();
-                tiles[start].next_up = prev;
-                tiles[prev].next_down = start;
-            }
-        }
-
-        Self(tiles)
+                    let region_position = (region_x as u8, region_y as u8);
+                    let tiles = rows
+                        .iter()
+                        .enumerate()
+                        .map(|(i, row)| {
+                            row[region_start_x..region_end_x]
+                                .iter()
+                                .enumerate()
+                                .map(|(j, &b)| {
+                                    let tile = match b {
+                                        b'.' => Tile::Open,
+                                        b'#' => Tile::Wall,
+                                        _ => unreachable!(),
+                                    };
+                                    let position = (j + 1, i + 1);
+                                    let next_left =
+                                        j.checked_sub(1).map(|j| i * CUBE_FACE_SIZE + j);
+                                    let next_up = i.checked_sub(1).map(|i| i * CUBE_FACE_SIZE + j);
+                                    let next_right = if j + 1 < CUBE_FACE_SIZE {
+                                        Some(i * CUBE_FACE_SIZE + j + 1)
+                                    } else {
+                                        None
+                                    };
+                                    let next_down = if i + 1 < CUBE_FACE_SIZE {
+                                        Some((i + 1) * CUBE_FACE_SIZE + j)
+                                    } else {
+                                        None
+                                    };
+                                    MapRegionTile {
+                                        tile,
+                                        position,
+                                        next_left,
+                                        next_up,
+                                        next_right,
+                                        next_down,
+                                    }
+                                })
+                                .collect::<Vec<_>>()
+                                .try_into()
+                                .unwrap()
+                        })
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap();
+                    let region = MapRegion {
+                        position: region_position,
+                        tiles,
+                    };
+                    Some(region)
+                })
+            })
+            .collect();
+        Self(regions)
     }
 
+    fn link_as_wrapping(&self) -> Map {
+        todo!()
+    }
+    fn link_as_cube(&self) -> Map {
+        todo!()
+    }
+}
+
+pub struct Map(Vec<MapTile>);
+
+impl Map {
     fn cursor(&self) -> MapCursor {
         MapCursor {
             map: self,
