@@ -148,8 +148,34 @@ pub struct RegionLinks {
 
 impl<'a> Map<'a> {
     fn link_as_wrapping(regions: &'a [MapRegion; 6]) -> Self {
-        let mut region_links = Default::default();
-        todo!();
+        let mut rows: Vec<Vec<usize>> = vec![];
+        let mut columns: Vec<Vec<usize>> = vec![];
+        for (i, region) in regions.iter().enumerate() {
+            let (column, row) = region.position;
+            if row >= rows.len() {
+                rows.resize_with(row + 1, Default::default);
+            }
+            if column >= columns.len() {
+                columns.resize_with(column + 1, Default::default);
+            }
+            rows[row].push(i);
+            columns[column].push(i);
+        }
+        let mut region_links: [RegionLinks; 6] = Default::default();
+        for row in rows {
+            let left_iter = std::iter::once(row.last().unwrap()).chain(row.iter());
+            for (left, right) in left_iter.zip(row.iter()) {
+                region_links[*left].right = *right;
+                region_links[*right].left = *left;
+            }
+        }
+        for column in columns {
+            let up_iter = std::iter::once(column.last().unwrap()).chain(column.iter());
+            for (up, down) in up_iter.zip(column.iter()) {
+                region_links[*up].down = *down;
+                region_links[*down].up = *up;
+            }
+        }
         Self {
             regions,
             region_links,
@@ -180,8 +206,8 @@ impl<'a> MapCursor<'a> {
         let region = &self.map.regions[self.region_index];
         let (region_x, region_y) = region.position;
         let (cursor_x, cursor_y) = self.position;
-        let x = region_x * REGION_SIZE + cursor_x;
-        let y = region_y * REGION_SIZE + cursor_y;
+        let x = region_x * REGION_SIZE + cursor_x + 1;
+        let y = region_y * REGION_SIZE + cursor_y + 1;
         (x, y)
     }
 
