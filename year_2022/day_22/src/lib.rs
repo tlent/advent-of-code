@@ -1,10 +1,69 @@
 pub const INPUT: &str = include_str!("../input.txt");
 
-const CUBE_FACE_SIZE: usize = 50;
+const REGION_SIZE: usize = 50;
 
-pub fn parse_input(input: &str) -> (MapRegions, Vec<PathStep>) {
-    let (map_str, mut path_str) = input.split_once("\n\n").unwrap();
-    let map_regions = MapRegions::from_input(map_str);
+pub fn parse_input(input: &str) -> ([MapRegion; 6], Vec<PathStep>) {
+    let (map_str, path_str) = input.split_once("\n\n").unwrap();
+    let map_regions = parse_map_regions(map_str);
+    let path = parse_path(path_str);
+    (map_regions, path)
+}
+
+pub fn part_one(map_regions: &[MapRegion; 6], path: &[PathStep]) -> usize {
+    let map = Map::link_as_wrapping(map_regions);
+    solve(&map, path)
+}
+
+pub fn part_two(map_regions: &[MapRegion; 6], path: &[PathStep]) -> usize {
+    let map = Map::link_as_cube(map_regions);
+    solve(&map, path)
+}
+
+fn parse_map_regions(map_str: &str) -> [MapRegion; 6] {
+    let lines = map_str
+        .lines()
+        .map(|l| l.bytes().collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+    lines
+        .chunks_exact(REGION_SIZE)
+        .enumerate()
+        .flat_map(|(region_y, chunk)| {
+            let width = chunk[0].len();
+            (0..width / REGION_SIZE)
+                .filter(|&region_x| {
+                    let region_start_x = region_x * REGION_SIZE;
+                    !chunk[0][region_start_x].is_ascii_whitespace()
+                })
+                .map(move |region_x| {
+                    let position = (region_x, region_y);
+                    let region_start_x = region_x * REGION_SIZE;
+                    let region_end_x = region_start_x + REGION_SIZE;
+                    let tiles = chunk
+                        .iter()
+                        .map(|bytes| {
+                            bytes[region_start_x..region_end_x]
+                                .iter()
+                                .map(|b| match b {
+                                    b'.' => Tile::Open,
+                                    b'#' => Tile::Wall,
+                                    _ => unreachable!(),
+                                })
+                                .collect::<Vec<_>>()
+                                .try_into()
+                                .unwrap()
+                        })
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap();
+                    MapRegion { position, tiles }
+                })
+        })
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap()
+}
+
+fn parse_path(mut path_str: &str) -> Vec<PathStep> {
     path_str = path_str.trim();
     let mut path = vec![];
     while !path_str.is_empty() {
@@ -22,17 +81,7 @@ pub fn parse_input(input: &str) -> (MapRegions, Vec<PathStep>) {
             path_str = &path_str[1..];
         }
     }
-    (map_regions, path)
-}
-
-pub fn part_one(map_regions: &MapRegions, path: &[PathStep]) -> usize {
-    let map = map_regions.link_as_wrapping();
-    solve(&map, path)
-}
-
-pub fn part_two(map_regions: &MapRegions, path: &[PathStep]) -> usize {
-    let map = map_regions.link_as_cube();
-    solve(&map, path)
+    path
 }
 
 fn solve(map: &Map, path: &[PathStep]) -> usize {
@@ -78,146 +127,107 @@ pub enum PathStep {
 }
 
 #[derive(Debug)]
-pub struct MapRegionTile {
-    position: (usize, usize),
-    tile: Tile,
-    next_up: Option<usize>,
-    next_left: Option<usize>,
-    next_right: Option<usize>,
-    next_down: Option<usize>,
+pub struct Map<'a> {
+    regions: &'a [MapRegion; 6],
+    region_links: [RegionLinks; 6],
 }
 
+#[derive(Debug)]
 pub struct MapRegion {
-    position: (u8, u8),
-    tiles: [[MapRegionTile; CUBE_FACE_SIZE]; CUBE_FACE_SIZE],
+    position: (usize, usize),
+    tiles: [[Tile; REGION_SIZE]; REGION_SIZE],
 }
 
-pub struct MapRegions(Vec<MapRegion>);
-
-impl MapRegions {
-    fn from_input(input: &str) -> Self {
-        let lines = input
-            .lines()
-            .map(|l| l.bytes().collect::<Vec<_>>())
-            .collect::<Vec<_>>();
-        let regions = lines
-            .chunks_exact(CUBE_FACE_SIZE)
-            .enumerate()
-            .flat_map(|(region_y, rows)| {
-                let width = rows[0].len();
-                (0..width / CUBE_FACE_SIZE).filter_map(move |region_x| {
-                    let region_start_x = region_x * CUBE_FACE_SIZE;
-                    let region_end_x = region_start_x + CUBE_FACE_SIZE;
-                    if rows[0][region_start_x].is_ascii_whitespace() {
-                        return None;
-                    }
-                    let region_position = (region_x as u8, region_y as u8);
-                    let tiles = rows
-                        .iter()
-                        .enumerate()
-                        .map(|(i, row)| {
-                            row[region_start_x..region_end_x]
-                                .iter()
-                                .enumerate()
-                                .map(|(j, &b)| {
-                                    let tile = match b {
-                                        b'.' => Tile::Open,
-                                        b'#' => Tile::Wall,
-                                        _ => unreachable!(),
-                                    };
-                                    let position = (j + 1, i + 1);
-                                    let next_left =
-                                        j.checked_sub(1).map(|j| i * CUBE_FACE_SIZE + j);
-                                    let next_up = i.checked_sub(1).map(|i| i * CUBE_FACE_SIZE + j);
-                                    let next_right = if j + 1 < CUBE_FACE_SIZE {
-                                        Some(i * CUBE_FACE_SIZE + j + 1)
-                                    } else {
-                                        None
-                                    };
-                                    let next_down = if i + 1 < CUBE_FACE_SIZE {
-                                        Some((i + 1) * CUBE_FACE_SIZE + j)
-                                    } else {
-                                        None
-                                    };
-                                    MapRegionTile {
-                                        tile,
-                                        position,
-                                        next_left,
-                                        next_up,
-                                        next_right,
-                                        next_down,
-                                    }
-                                })
-                                .collect::<Vec<_>>()
-                                .try_into()
-                                .unwrap()
-                        })
-                        .collect::<Vec<_>>()
-                        .try_into()
-                        .unwrap();
-                    let region = MapRegion {
-                        position: region_position,
-                        tiles,
-                    };
-                    Some(region)
-                })
-            })
-            .collect();
-        Self(regions)
-    }
-
-    fn link_as_wrapping(&self) -> Map {
-        todo!()
-    }
-    fn link_as_cube(&self) -> Map {
-        todo!()
-    }
+#[derive(Debug, Default)]
+pub struct RegionLinks {
+    up: usize,
+    left: usize,
+    right: usize,
+    down: usize,
 }
 
-pub struct Map(Vec<MapTile>);
+impl<'a> Map<'a> {
+    fn link_as_wrapping(regions: &'a [MapRegion; 6]) -> Self {
+        let mut region_links = Default::default();
+        todo!();
+        Self {
+            regions,
+            region_links,
+        }
+    }
 
-impl Map {
+    fn link_as_cube(regions: &[MapRegion; 6]) -> Self {
+        todo!()
+    }
+
     fn cursor(&self) -> MapCursor {
         MapCursor {
             map: self,
-            current_tile: &self.0[0],
+            region_index: 0,
+            position: (0, 0),
         }
     }
 }
 
-pub struct MapTile {
-    position: (usize, usize),
-    tile: Tile,
-    next_up: usize,
-    next_left: usize,
-    next_right: usize,
-    next_down: usize,
-}
-
 pub struct MapCursor<'a> {
-    map: &'a Map,
-    current_tile: &'a MapTile,
+    map: &'a Map<'a>,
+    region_index: usize,
+    position: (usize, usize),
 }
 
 impl<'a> MapCursor<'a> {
     fn position(&self) -> (usize, usize) {
-        self.current_tile.position
+        let region = &self.map.regions[self.region_index];
+        let (region_x, region_y) = region.position;
+        let (cursor_x, cursor_y) = self.position;
+        let x = region_x * REGION_SIZE + cursor_x;
+        let y = region_y * REGION_SIZE + cursor_y;
+        (x, y)
     }
 
     fn tile(&self) -> Tile {
-        self.current_tile.tile
+        let region = &self.map.regions[self.region_index];
+        let (x, y) = self.position;
+        region.tiles[y][x]
     }
 
     fn next(&self, direction: Direction) -> Self {
-        let index = match direction {
-            Direction::Up => self.current_tile.next_up,
-            Direction::Left => self.current_tile.next_left,
-            Direction::Right => self.current_tile.next_right,
-            Direction::Down => self.current_tile.next_down,
+        let region_links = &self.map.region_links[self.region_index];
+        let (x, y) = self.position;
+        let (region_index, position) = match direction {
+            Direction::Up => {
+                if y == 0 {
+                    (region_links.up, (x, REGION_SIZE - 1))
+                } else {
+                    (self.region_index, (x, y - 1))
+                }
+            }
+            Direction::Left => {
+                if x == 0 {
+                    (region_links.left, (REGION_SIZE - 1, y))
+                } else {
+                    (self.region_index, (x - 1, y))
+                }
+            }
+            Direction::Right => {
+                if x == REGION_SIZE - 1 {
+                    (region_links.right, (0, y))
+                } else {
+                    (self.region_index, (x + 1, y))
+                }
+            }
+            Direction::Down => {
+                if y == REGION_SIZE - 1 {
+                    (region_links.down, (x, 0))
+                } else {
+                    (self.region_index, (x, y + 1))
+                }
+            }
         };
         Self {
             map: self.map,
-            current_tile: &self.map.0[index],
+            region_index,
+            position,
         }
     }
 }
