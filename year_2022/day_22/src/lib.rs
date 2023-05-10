@@ -198,6 +198,7 @@ impl<'a> Map<'a> {
 
     fn link_as_cube(regions: &'a [MapRegion; 6]) -> Self {
         let mut region_links: [RegionLinks; 6] = Default::default();
+        let mut linked_cubes = vec![vec![]; 6];
         let mut unlinked_region_edges = (0..6)
             .flat_map(|id| {
                 Direction::iter().map(move |direction| {
@@ -231,7 +232,9 @@ impl<'a> Map<'a> {
             .collect::<Vec<_>>();
         for (a @ (a_id, a_direction, ..), b @ (b_id, b_direction, ..)) in connected_edge_pairs {
             region_links[a_id].link_direction(a_direction, b_id);
+            linked_cubes[a_id].push(b_id);
             region_links[b_id].link_direction(b_direction, a_id);
+            linked_cubes[b_id].push(a_id);
             unlinked_region_edges.retain(|&e| e != a && e != b);
             dbg!((a, b));
         }
@@ -243,7 +246,10 @@ impl<'a> Map<'a> {
             let mut best_distance = manhattan_distance(best_pair.0 .2, best_pair.1 .2);
             for &a @ (a_id, _, a_position) in &unlinked_region_edges {
                 for &b @ (b_id, _, b_position) in &unlinked_region_edges {
-                    if a_id == b_id {
+                    if a_id == b_id
+                        || linked_cubes[a_id].contains(&b_id)
+                        || linked_cubes[b_id].contains(&a_id)
+                    {
                         continue;
                     }
                     let distance = manhattan_distance(a_position, b_position);
