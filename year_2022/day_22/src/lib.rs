@@ -1,6 +1,6 @@
 pub const INPUT: &str = include_str!("../input.txt");
 
-const REGION_SIZE: usize = 50;
+const REGION_SIZE: usize = 4;
 
 pub fn parse_input(input: &str) -> ([MapRegion; 6], Vec<PathStep>) {
     let (map_str, path_str) = input.split_once("\n\n").unwrap();
@@ -103,6 +103,7 @@ fn solve(map: &Map, path: &[PathStep]) -> usize {
         }
     }
     let (column, row) = cursor.position();
+    dbg!(row, column, facing);
     1000 * row
         + 4 * column
         + match facing {
@@ -146,32 +147,45 @@ pub struct RegionLinks {
     down: usize,
 }
 
+impl RegionLinks {
+    fn link_direction(&mut self, direction: Direction, id: usize) {
+        match direction {
+            Direction::Up => self.up = id,
+            Direction::Left => self.left = id,
+            Direction::Right => self.right = id,
+            Direction::Down => self.down = id,
+        }
+    }
+}
+
 impl<'a> Map<'a> {
     fn link_as_wrapping(regions: &'a [MapRegion; 6]) -> Self {
-        let mut rows: Vec<Vec<usize>> = vec![];
-        let mut columns: Vec<Vec<usize>> = vec![];
+        let row_count = regions.iter().map(|r| r.position.1).max().unwrap() + 1;
+        let column_count = regions.iter().map(|r| r.position.0).max().unwrap() + 1;
+        let mut rows = vec![vec![]; row_count];
+        let mut columns = vec![vec![]; column_count];
         for (i, region) in regions.iter().enumerate() {
             let (column, row) = region.position;
-            if row >= rows.len() {
-                rows.resize_with(row + 1, Default::default);
-            }
-            if column >= columns.len() {
-                columns.resize_with(column + 1, Default::default);
-            }
             rows[row].push(i);
             columns[column].push(i);
         }
         let mut region_links: [RegionLinks; 6] = Default::default();
         for row in rows {
-            let left_iter = std::iter::once(row.last().unwrap()).chain(row.iter());
-            for (left, right) in left_iter.zip(row.iter()) {
+            let first = *row.first().unwrap();
+            let last = *row.last().unwrap();
+            region_links[first].left = last;
+            region_links[last].right = first;
+            for (left, right) in row.iter().zip(row.iter().skip(1)) {
                 region_links[*left].right = *right;
                 region_links[*right].left = *left;
             }
         }
         for column in columns {
-            let up_iter = std::iter::once(column.last().unwrap()).chain(column.iter());
-            for (up, down) in up_iter.zip(column.iter()) {
+            let first = *column.first().unwrap();
+            let last = *column.last().unwrap();
+            region_links[first].up = last;
+            region_links[last].down = first;
+            for (up, down) in column.iter().zip(column.iter().skip(1)) {
                 region_links[*up].down = *down;
                 region_links[*down].up = *up;
             }
@@ -182,8 +196,73 @@ impl<'a> Map<'a> {
         }
     }
 
-    fn link_as_cube(regions: &[MapRegion; 6]) -> Self {
-        todo!()
+    fn link_as_cube(regions: &'a [MapRegion; 6]) -> Self {
+        let mut region_links: [RegionLinks; 6] = Default::default();
+        let mut unlinked_region_edges = (0..6)
+            .flat_map(|id| {
+                Direction::iter().map(move |direction| {
+                    let (x, y) = regions[id].position;
+                    let (mut x, mut y) = (x as i32, y as i32);
+                    match direction {
+                        Direction::Up => y -= 1,
+                        Direction::Left => x -= 1,
+                        Direction::Right => x += 1,
+                        Direction::Down => y += 1,
+                    }
+                    let position = (x, y);
+                    (id, direction, position)
+                })
+            })
+            .collect::<Vec<_>>();
+        let connected_edge_pairs = unlinked_region_edges
+            .iter()
+            .flat_map(|&a @ (a_id, _, a_position)| {
+                unlinked_region_edges
+                    .iter()
+                    .filter(move |&&(b_id, _, b_position)| {
+                        let a_position = (a_position.0 as usize, a_position.1 as usize);
+                        let b_position = (b_position.0 as usize, b_position.1 as usize);
+                        a_id < b_id
+                            && regions[a_id].position == b_position
+                            && regions[b_id].position == a_position
+                    })
+                    .map(move |&b| (a, b))
+            })
+            .collect::<Vec<_>>();
+        for (a @ (a_id, a_direction, ..), b @ (b_id, b_direction, ..)) in connected_edge_pairs {
+            region_links[a_id].link_direction(a_direction, b_id);
+            region_links[b_id].link_direction(b_direction, a_id);
+            unlinked_region_edges.retain(|&e| e != a && e != b);
+            dbg!((a, b));
+        }
+        while !unlinked_region_edges.is_empty() {
+            let mut best_pair = (
+                unlinked_region_edges.first().copied().unwrap(),
+                unlinked_region_edges.last().copied().unwrap(),
+            );
+            let mut best_distance = manhattan_distance(best_pair.0 .2, best_pair.1 .2);
+            for &a @ (a_id, _, a_position) in &unlinked_region_edges {
+                for &b @ (b_id, _, b_position) in &unlinked_region_edges {
+                    if a_id == b_id {
+                        continue;
+                    }
+                    let distance = manhattan_distance(a_position, b_position);
+                    if distance < best_distance {
+                        best_pair = (a, b);
+                        best_distance = distance;
+                    }
+                }
+            }
+            dbg!(best_pair);
+            let (a @ (a_id, a_direction, ..), b @ (b_id, b_direction, ..)) = best_pair;
+            region_links[a_id].link_direction(a_direction, b_id);
+            region_links[b_id].link_direction(b_direction, a_id);
+            unlinked_region_edges.retain(|&e| e != a && e != b);
+        }
+        Self {
+            regions,
+            region_links,
+        }
     }
 
     fn cursor(&self) -> MapCursor {
@@ -258,7 +337,7 @@ impl<'a> MapCursor<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Direction {
     Up,
     Left,
@@ -284,6 +363,14 @@ impl Direction {
             Self::Down => Self::Left,
         }
     }
+
+    fn iter() -> impl Iterator<Item = Direction> {
+        [Self::Up, Self::Left, Self::Down, Self::Right].into_iter()
+    }
+}
+
+fn manhattan_distance((x1, y1): (i32, i32), (x2, y2): (i32, i32)) -> i32 {
+    (x1 - x2).abs() + (y1 - y2).abs()
 }
 
 #[cfg(test)]
