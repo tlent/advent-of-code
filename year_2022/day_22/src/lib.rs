@@ -1,6 +1,6 @@
 pub const INPUT: &str = include_str!("../input.txt");
 
-const REGION_SIZE: usize = 4;
+const REGION_SIZE: usize = 50;
 
 pub fn parse_input(input: &str) -> ([MapRegion; 6], Vec<PathStep>) {
     let (map_str, path_str) = input.split_once("\n\n").unwrap();
@@ -86,24 +86,22 @@ fn parse_path(mut path_str: &str) -> Vec<PathStep> {
 
 fn solve(map: &Map, path: &[PathStep]) -> usize {
     let mut cursor = map.cursor();
-    let mut facing = Direction::Right;
     for step in path {
         match step {
             PathStep::Forward(n) => {
                 for _ in 0..*n {
-                    let next = cursor.next(facing);
+                    let next = cursor.next();
                     if next.tile() == Tile::Wall {
                         break;
                     }
                     cursor = next;
                 }
             }
-            PathStep::Left => facing = facing.turn_left(),
-            PathStep::Right => facing = facing.turn_right(),
+            PathStep::Left => cursor.turn_left(),
+            PathStep::Right => cursor.turn_right(),
         }
     }
-    let (column, row) = cursor.position();
-    dbg!(row, column, facing);
+    let (column, row, facing) = cursor.position();
     1000 * row
         + 4 * column
         + match facing {
@@ -139,21 +137,21 @@ pub struct MapRegion {
     tiles: [[Tile; REGION_SIZE]; REGION_SIZE],
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct RegionLinks {
-    up: usize,
-    left: usize,
-    right: usize,
-    down: usize,
+    up: (usize, Direction),
+    left: (usize, Direction),
+    right: (usize, Direction),
+    down: (usize, Direction),
 }
 
 impl RegionLinks {
-    fn link_direction(&mut self, direction: Direction, id: usize) {
-        match direction {
-            Direction::Up => self.up = id,
-            Direction::Left => self.left = id,
-            Direction::Right => self.right = id,
-            Direction::Down => self.down = id,
+    fn link_edge(&mut self, edge: Direction, other_id: usize, other_edge: Direction) {
+        match edge {
+            Direction::Up => self.up = (other_id, other_edge),
+            Direction::Left => self.left = (other_id, other_edge),
+            Direction::Right => self.right = (other_id, other_edge),
+            Direction::Down => self.down = (other_id, other_edge),
         }
     }
 }
@@ -173,21 +171,21 @@ impl<'a> Map<'a> {
         for row in rows {
             let first = *row.first().unwrap();
             let last = *row.last().unwrap();
-            region_links[first].left = last;
-            region_links[last].right = first;
-            for (left, right) in row.iter().zip(row.iter().skip(1)) {
-                region_links[*left].right = *right;
-                region_links[*right].left = *left;
+            region_links[first].link_edge(Direction::Left, last, Direction::Right);
+            region_links[last].link_edge(Direction::Right, first, Direction::Left);
+            for (&left, &right) in row.iter().zip(row.iter().skip(1)) {
+                region_links[left].link_edge(Direction::Right, right, Direction::Left);
+                region_links[right].link_edge(Direction::Left, left, Direction::Right);
             }
         }
         for column in columns {
             let first = *column.first().unwrap();
             let last = *column.last().unwrap();
-            region_links[first].up = last;
-            region_links[last].down = first;
-            for (up, down) in column.iter().zip(column.iter().skip(1)) {
-                region_links[*up].down = *down;
-                region_links[*down].up = *up;
+            region_links[first].link_edge(Direction::Up, last, Direction::Down);
+            region_links[last].link_edge(Direction::Down, first, Direction::Up);
+            for (&up, &down) in column.iter().zip(column.iter().skip(1)) {
+                region_links[up].link_edge(Direction::Down, down, Direction::Up);
+                region_links[down].link_edge(Direction::Up, first, Direction::Down);
             }
         }
         Self {
@@ -231,12 +229,11 @@ impl<'a> Map<'a> {
             })
             .collect::<Vec<_>>();
         for (a @ (a_id, a_direction, ..), b @ (b_id, b_direction, ..)) in connected_edge_pairs {
-            region_links[a_id].link_direction(a_direction, b_id);
+            region_links[a_id].link_edge(a_direction, b_id, b_direction);
             linked_cubes[a_id].push(b_id);
-            region_links[b_id].link_direction(b_direction, a_id);
+            region_links[b_id].link_edge(b_direction, a_id, a_direction);
             linked_cubes[b_id].push(a_id);
             unlinked_region_edges.retain(|&e| e != a && e != b);
-            dbg!((a, b));
         }
         while !unlinked_region_edges.is_empty() {
             let mut best_pair = (
@@ -259,10 +256,11 @@ impl<'a> Map<'a> {
                     }
                 }
             }
-            dbg!(best_pair);
             let (a @ (a_id, a_direction, ..), b @ (b_id, b_direction, ..)) = best_pair;
-            region_links[a_id].link_direction(a_direction, b_id);
-            region_links[b_id].link_direction(b_direction, a_id);
+            region_links[a_id].link_edge(a_direction, b_id, b_direction);
+            linked_cubes[a_id].push(b_id);
+            region_links[b_id].link_edge(b_direction, a_id, a_direction);
+            linked_cubes[b_id].push(a_id);
             unlinked_region_edges.retain(|&e| e != a && e != b);
         }
         Self {
@@ -276,6 +274,7 @@ impl<'a> Map<'a> {
             map: self,
             region_index: 0,
             position: (0, 0),
+            facing: Direction::Right,
         }
     }
 }
@@ -284,16 +283,17 @@ pub struct MapCursor<'a> {
     map: &'a Map<'a>,
     region_index: usize,
     position: (usize, usize),
+    facing: Direction,
 }
 
 impl<'a> MapCursor<'a> {
-    fn position(&self) -> (usize, usize) {
+    fn position(&self) -> (usize, usize, Direction) {
         let region = &self.map.regions[self.region_index];
         let (region_x, region_y) = region.position;
         let (cursor_x, cursor_y) = self.position;
         let x = region_x * REGION_SIZE + cursor_x + 1;
         let y = region_y * REGION_SIZE + cursor_y + 1;
-        (x, y)
+        (x, y, self.facing)
     }
 
     fn tile(&self) -> Tile {
@@ -302,49 +302,96 @@ impl<'a> MapCursor<'a> {
         region.tiles[y][x]
     }
 
-    fn next(&self, direction: Direction) -> Self {
+    fn turn_left(&mut self) {
+        self.facing = self.facing.turn_left();
+    }
+
+    fn turn_right(&mut self) {
+        self.facing = self.facing.turn_right();
+    }
+
+    fn next(&self) -> Self {
         let region_links = &self.map.region_links[self.region_index];
-        let (x, y) = self.position;
-        let (region_index, position) = match direction {
+        let Self {
+            mut region_index,
+            position: (mut x, mut y),
+            mut facing,
+            ..
+        } = *self;
+        match facing {
             Direction::Up => {
                 if y == 0 {
-                    (region_links.up, (x, REGION_SIZE - 1))
+                    let (linked_region, edge) = region_links.up;
+                    region_index = linked_region;
+                    facing = edge.reverse();
+                    (x, y) = match edge {
+                        Direction::Down => (x, REGION_SIZE - 1),
+                        Direction::Up => (REGION_SIZE - x - 1, 0),
+                        Direction::Left => (0, x),
+                        Direction::Right => (REGION_SIZE - 1, REGION_SIZE - x - 1),
+                    };
                 } else {
-                    (self.region_index, (x, y - 1))
+                    y -= 1;
                 }
             }
             Direction::Left => {
                 if x == 0 {
-                    (region_links.left, (REGION_SIZE - 1, y))
+                    let (linked_region, edge) = region_links.left;
+                    region_index = linked_region;
+                    facing = edge.reverse();
+                    (x, y) = match edge {
+                        Direction::Down => (REGION_SIZE - y - 1, REGION_SIZE - 1),
+                        Direction::Up => (y, 0),
+                        Direction::Left => (0, y),
+                        Direction::Right => (REGION_SIZE - 1, y),
+                    };
                 } else {
-                    (self.region_index, (x - 1, y))
+                    x -= 1;
                 }
             }
             Direction::Right => {
                 if x == REGION_SIZE - 1 {
-                    (region_links.right, (0, y))
+                    let (linked_region, edge) = region_links.right;
+                    region_index = linked_region;
+                    facing = edge.reverse();
+                    (x, y) = match edge {
+                        Direction::Down => (y, REGION_SIZE - 1),
+                        Direction::Up => (REGION_SIZE - y - 1, 0),
+                        Direction::Left => (0, y),
+                        Direction::Right => (REGION_SIZE - 1, y),
+                    };
                 } else {
-                    (self.region_index, (x + 1, y))
+                    x += 1;
                 }
             }
             Direction::Down => {
                 if y == REGION_SIZE - 1 {
-                    (region_links.down, (x, 0))
+                    let (linked_region, edge) = region_links.down;
+                    region_index = linked_region;
+                    facing = edge.reverse();
+                    (x, y) = match edge {
+                        Direction::Down => (REGION_SIZE - x - 1, REGION_SIZE - 1),
+                        Direction::Up => (x, 0),
+                        Direction::Left => (0, REGION_SIZE - x - 1),
+                        Direction::Right => (REGION_SIZE - 1, x),
+                    };
                 } else {
-                    (self.region_index, (x, y + 1))
+                    y += 1;
                 }
             }
         };
         Self {
             map: self.map,
+            position: (x, y),
             region_index,
-            position,
+            facing,
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 enum Direction {
+    #[default]
     Up,
     Left,
     Right,
@@ -354,19 +401,28 @@ enum Direction {
 impl Direction {
     fn turn_left(&self) -> Self {
         match self {
-            Self::Up => Self::Left,
-            Self::Left => Self::Down,
-            Self::Right => Self::Up,
-            Self::Down => Self::Right,
+            Direction::Up => Direction::Left,
+            Direction::Left => Direction::Down,
+            Direction::Down => Direction::Right,
+            Direction::Right => Direction::Up,
         }
     }
 
     fn turn_right(&self) -> Self {
         match self {
-            Self::Up => Self::Right,
-            Self::Left => Self::Up,
-            Self::Right => Self::Down,
-            Self::Down => Self::Left,
+            Direction::Up => Direction::Right,
+            Direction::Right => Direction::Down,
+            Direction::Down => Direction::Left,
+            Direction::Left => Direction::Up,
+        }
+    }
+
+    fn reverse(&self) -> Self {
+        match self {
+            Direction::Up => Direction::Down,
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
         }
     }
 
