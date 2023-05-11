@@ -342,7 +342,7 @@ impl<'a> MapCursor<'a> {
                     (x, y) = match edge {
                         Direction::Down => (REGION_SIZE - y - 1, REGION_SIZE - 1),
                         Direction::Up => (y, 0),
-                        Direction::Left => (0, y),
+                        Direction::Left => (0, REGION_SIZE - y - 1),
                         Direction::Right => (REGION_SIZE - 1, y),
                     };
                 } else {
@@ -358,7 +358,7 @@ impl<'a> MapCursor<'a> {
                         Direction::Down => (y, REGION_SIZE - 1),
                         Direction::Up => (REGION_SIZE - y - 1, 0),
                         Direction::Left => (0, y),
-                        Direction::Right => (REGION_SIZE - 1, y),
+                        Direction::Right => (REGION_SIZE - 1, REGION_SIZE - y - 1),
                     };
                 } else {
                     x += 1;
