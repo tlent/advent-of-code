@@ -1,5 +1,5 @@
-use year_2023_day_01::{self, INPUT};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use year_2023_day_01::{self, INPUT};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let parse_result = year_2023_day_01::parse_input(INPUT);

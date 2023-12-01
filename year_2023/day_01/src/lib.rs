@@ -1,6 +1,6 @@
 pub const INPUT: &str = include_str!("../input.txt");
 
-const DIGITS: [(&str, u32); 9] = [
+const WORD_DIGIT_PAIRS: [(&str, u8); 9] = [
     ("one", 1),
     ("two", 2),
     ("three", 3),
@@ -20,17 +20,9 @@ pub fn part_one(lines: &[&str]) -> u32 {
     lines
         .iter()
         .map(|line| {
-            let left_digit = line
-                .chars()
-                .find(char::is_ascii_digit)
-                .and_then(|c| c.to_digit(10))
-                .unwrap();
-            let right_digit = line
-                .chars()
-                .rfind(char::is_ascii_digit)
-                .and_then(|c| c.to_digit(10))
-                .unwrap();
-            10 * left_digit + right_digit
+            let left_digit = line.bytes().find(u8::is_ascii_digit).map(|b| b - b'0');
+            let right_digit = line.bytes().rfind(u8::is_ascii_digit).map(|b| b - b'0');
+            (10 * left_digit.unwrap() + right_digit.unwrap()) as u32
         })
         .sum()
 }
@@ -39,30 +31,18 @@ pub fn part_two(lines: &[&str]) -> u32 {
     lines
         .iter()
         .map(|line| {
-            let mut left_digit = None;
-            for i in 0..line.len() {
-                if let Some(digit) = find_digit(&line[i..]) {
-                    left_digit = Some(digit);
-                    break;
-                }
-            }
-            let mut right_digit = None;
-            for i in (0..line.len()).rev() {
-                if let Some(digit) = find_digit(&line[i..]) {
-                    right_digit = Some(digit);
-                    break;
-                }
-            }
-            10 * left_digit.unwrap() + right_digit.unwrap()
+            let left_digit = (0..line.len()).find_map(|i| find_digit(&line[i..]));
+            let right_digit = (0..line.len()).rev().find_map(|i| find_digit(&line[i..]));
+            (10 * left_digit.unwrap() + right_digit.unwrap()) as u32
         })
         .sum()
 }
 
-fn find_digit(s: &str) -> Option<u32> {
-    if let Some(digit) = s.chars().next().and_then(|c| c.to_digit(10)) {
-        return Some(digit);
+fn find_digit(s: &str) -> Option<u8> {
+    if let Some(b) = s.bytes().next().filter(u8::is_ascii_digit) {
+        return Some(b - b'0');
     }
-    for &(word, digit) in &DIGITS {
+    for &(word, digit) in &WORD_DIGIT_PAIRS {
         if s.starts_with(word) {
             return Some(digit);
         }
