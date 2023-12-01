@@ -2,6 +2,7 @@
 members = [
   "project_generator",
   "year_2022/*",
+  "year_2023/*",
 ]
 resolver = "2"
 
