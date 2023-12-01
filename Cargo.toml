@@ -1,8 +1,9 @@
 [workspace]
 members = [
   "project_generator",
-  "year_2022/*"
+  "year_2022/*",
 ]
+resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
