@@ -19,8 +19,8 @@ const BENCH_TEMPLATE: &str = "bench.rs.template";
 
 fn main() -> Result<()> {
     let (year, day_number) = read_args()?;
-    let day_str = format!("day_{:02}", day_number);
-    let project_path = PathBuf::from(format!("year_{year}/{day_str}"));
+    let crate_name = format!("year_{year}_day_{day_number:02}");
+    let project_path = PathBuf::from(format!("year_{year}/day_{day_number:02}"));
     let src_path = project_path.join("src");
     fs::create_dir_all(&src_path)?;
     let pairs = [
@@ -33,7 +33,7 @@ fn main() -> Result<()> {
     for (template_name, output_path) in pairs {
         let template_path = templates_path.join(template_name);
         let template = fs::read_to_string(template_path)?;
-        let rendered = template.replace("{{ day }}", &day_str);
+        let rendered = template.replace("{{ crate_name }}", &crate_name);
         fs::write(output_path, rendered)?;
     }
     let url = format!("{}/{}/day/{}/input", ADVENT_OF_CODE_URL, year, day_number);

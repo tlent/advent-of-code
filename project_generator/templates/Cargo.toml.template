@@ -1,5 +1,5 @@
 [package]
-name = "{{ day }}"
+name = "{{ crate_name }}"
 version.workspace = true
 edition.workspace = true
 
@@ -11,6 +11,6 @@ edition.workspace = true
 criterion.workspace = true
 
 [[bench]]
-name = "{{ day }}"
+name = "{{ crate_name }}"
 path = "src/bench.rs"
 harness = false
