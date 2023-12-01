@@ -7,11 +7,11 @@ pub fn parse_input(input: &str) -> ParsedInput {
     todo!()
 }
 
-pub fn part_one(lines: &ParsedInput) -> Output {
+pub fn part_one(input: &ParsedInput) -> Output {
     todo!()
 }
 
-pub fn part_two(lines: &ParsedInput) -> Output {
+pub fn part_two(input: &ParsedInput) -> Output {
     todo!()
 }
 
