@@ -1,4 +1,4 @@
-use {{ crate_name }}::{self, INPUT};
+use {{ crate_name }}::INPUT;
 use std::env;
 
 fn main() {

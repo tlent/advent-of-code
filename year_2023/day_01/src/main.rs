@@ -1,5 +1,5 @@
 use std::env;
-use year_2023_day_01::{self, INPUT};
+use year_2023_day_01::INPUT;
 
 fn main() {
     let parse_result = year_2023_day_01::parse_input(INPUT);
