@@ -40,36 +40,34 @@ pub fn part_two(lines: &[&str]) -> u32 {
         .iter()
         .map(|line| {
             let mut left_digit = None;
-            'outer: for i in 0..line.len() {
-                let l = &line[i..];
-                if l.starts_with(|c: char| c.is_ascii_digit()) {
-                    left_digit = l.chars().next().and_then(|c| c.to_digit(10));
+            for i in 0..line.len() {
+                if let Some(digit) = find_digit(&line[i..]) {
+                    left_digit = Some(digit);
                     break;
-                }
-                for &(word, digit) in &DIGITS {
-                    if l.starts_with(word) {
-                        left_digit = Some(digit);
-                        break 'outer;
-                    }
                 }
             }
             let mut right_digit = None;
-            'outer: for i in 0..line.len() {
-                let l = &line[..line.len() - i];
-                if l.ends_with(|c: char| c.is_ascii_digit()) {
-                    right_digit = l.chars().next_back().and_then(|c| c.to_digit(10));
+            for i in (0..line.len()).rev() {
+                if let Some(digit) = find_digit(&line[i..]) {
+                    right_digit = Some(digit);
                     break;
-                }
-                for &(word, digit) in &DIGITS {
-                    if l.ends_with(word) {
-                        right_digit = Some(digit);
-                        break 'outer;
-                    }
                 }
             }
             10 * left_digit.unwrap() + right_digit.unwrap()
         })
         .sum()
+}
+
+fn find_digit(s: &str) -> Option<u32> {
+    if let Some(digit) = s.chars().next().and_then(|c| c.to_digit(10)) {
+        return Some(digit);
+    }
+    for &(word, digit) in &DIGITS {
+        if s.starts_with(word) {
+            return Some(digit);
+        }
+    }
+    None
 }
 
 #[cfg(test)]
