@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use year_2022_day_04::{self, INPUT};
+use year_2022_day_04::INPUT;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let pairs = year_2022_day_04::parse_input(INPUT).unwrap();

@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use year_2022_day_05::{self, INPUT};
+use year_2022_day_05::INPUT;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let (stacks, moves) = year_2022_day_05::parse_input(INPUT).unwrap();

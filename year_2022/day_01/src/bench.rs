@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use year_2022_day_01::{self, INPUT};
+use year_2022_day_01::INPUT;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let group_sums = year_2022_day_01::parse_input(INPUT).unwrap();

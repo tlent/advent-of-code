@@ -1,4 +1,4 @@
-use year_2022_day_08::{self, INPUT};
+use year_2022_day_08::INPUT;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn criterion_benchmark(c: &mut Criterion) {

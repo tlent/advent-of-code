@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use year_2022_day_22::{self, INPUT};
+use year_2022_day_22::INPUT;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let (map_regions, path) = year_2022_day_22::parse_input(INPUT);

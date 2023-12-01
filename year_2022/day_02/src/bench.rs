@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use year_2022_day_02::{self, INPUT};
+use year_2022_day_02::INPUT;
 
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("year_2022_day_02::solve", |b| {

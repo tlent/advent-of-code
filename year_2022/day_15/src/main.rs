@@ -1,4 +1,4 @@
-use year_2022_day_15::{self, INPUT};
+use year_2022_day_15::INPUT;
 use std::env;
 
 fn main() {

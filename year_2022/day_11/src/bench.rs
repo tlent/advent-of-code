@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
-use year_2022_day_11::{self, INPUT};
+use year_2022_day_11::INPUT;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let monkeys = year_2022_day_11::parser::parse(INPUT).unwrap();
