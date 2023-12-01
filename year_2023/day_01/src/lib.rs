@@ -31,23 +31,33 @@ pub fn part_two(lines: &[&str]) -> u32 {
     lines
         .iter()
         .map(|line| {
-            let left_digit = (0..line.len()).find_map(|i| find_digit(&line[i..]));
-            let right_digit = (0..line.len()).rev().find_map(|i| find_digit(&line[i..]));
+            let left_digit = (0..line.len()).find_map(|i| {
+                let s = &line[i..];
+                if let Some(b) = s.bytes().next().filter(u8::is_ascii_digit) {
+                    return Some(b - b'0');
+                }
+                for &(word, digit) in &WORD_DIGIT_PAIRS {
+                    if s.starts_with(word) {
+                        return Some(digit);
+                    }
+                }
+                None
+            });
+            let right_digit = (0..line.len()).rev().find_map(|i| {
+                let s = &line[..=i];
+                if let Some(b) = s.bytes().next_back().filter(u8::is_ascii_digit) {
+                    return Some(b - b'0');
+                }
+                for &(word, digit) in &WORD_DIGIT_PAIRS {
+                    if s.ends_with(word) {
+                        return Some(digit);
+                    }
+                }
+                None
+            });
             (10 * left_digit.unwrap() + right_digit.unwrap()) as u32
         })
         .sum()
-}
-
-fn find_digit(s: &str) -> Option<u8> {
-    if let Some(b) = s.bytes().next().filter(u8::is_ascii_digit) {
-        return Some(b - b'0');
-    }
-    for &(word, digit) in &WORD_DIGIT_PAIRS {
-        if s.starts_with(word) {
-            return Some(digit);
-        }
-    }
-    None
 }
 
 #[cfg(test)]
