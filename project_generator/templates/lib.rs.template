@@ -1,14 +1,17 @@
 pub const INPUT: &str = include_str!("../input.txt");
 
-pub fn parse_input(input: &str) -> () {
+type ParsedInput = Vec<&'static str>;
+type Output = u32;
+
+pub fn parse_input(input: &str) -> ParsedInput {
     todo!()
 }
 
-pub fn part_one() -> () {
+pub fn part_one(lines: &ParsedInput) -> Output {
     todo!()
 }
 
-pub fn part_two() -> () {
+pub fn part_two(lines: &ParsedInput) -> Output {
     todo!()
 }
 
