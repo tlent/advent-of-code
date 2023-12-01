@@ -1,5 +1,5 @@
 [package]
-name = "day_17"
+name = "year_2022_day_17"
 version.workspace = true
 edition.workspace = true
 
@@ -12,6 +12,6 @@ rustc-hash.workspace = true
 criterion.workspace = true
 
 [[bench]]
-name = "day_17"
+name = "year_2022_day_17"
 path = "src/bench.rs"
 harness = false

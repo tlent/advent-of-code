@@ -266,177 +266,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "day_01"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_02"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_03"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_04"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_05"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_06"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_07"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_08"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "rayon",
-]
-
-[[package]]
-name = "day_09"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "rustc-hash",
-]
-
-[[package]]
-name = "day_10"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_11"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "criterion",
- "nom",
-]
-
-[[package]]
-name = "day_12"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_13"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_14"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "rustc-hash",
-]
-
-[[package]]
-name = "day_15"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "criterion",
- "nom",
- "rustc-hash",
-]
-
-[[package]]
-name = "day_16"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bitvec",
- "criterion",
- "nom",
- "rustc-hash",
-]
-
-[[package]]
-name = "day_17"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "rustc-hash",
-]
-
-[[package]]
-name = "day_18"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "rustc-hash",
-]
-
-[[package]]
-name = "day_19"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "regex",
- "rustc-hash",
-]
-
-[[package]]
-name = "day_20"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "day_21"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "rustc-hash",
-]
-
-[[package]]
-name = "day_22"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
 name = "either"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1711,4 +1540,175 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05f360fc0b24296329c78fda852a1e9ae82de9cf7b27dae4b7f62f118f77b9ed"
 dependencies = [
  "tap",
+]
+
+[[package]]
+name = "year_2022_day_01"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_02"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_03"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_04"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_05"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_06"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_07"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_08"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "rayon",
+]
+
+[[package]]
+name = "year_2022_day_09"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "rustc-hash",
+]
+
+[[package]]
+name = "year_2022_day_10"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_11"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "nom",
+]
+
+[[package]]
+name = "year_2022_day_12"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_13"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_14"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "rustc-hash",
+]
+
+[[package]]
+name = "year_2022_day_15"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "nom",
+ "rustc-hash",
+]
+
+[[package]]
+name = "year_2022_day_16"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bitvec",
+ "criterion",
+ "nom",
+ "rustc-hash",
+]
+
+[[package]]
+name = "year_2022_day_17"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "rustc-hash",
+]
+
+[[package]]
+name = "year_2022_day_18"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "rustc-hash",
+]
+
+[[package]]
+name = "year_2022_day_19"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "regex",
+ "rustc-hash",
+]
+
+[[package]]
+name = "year_2022_day_20"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "year_2022_day_21"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "rustc-hash",
+]
+
+[[package]]
+name = "year_2022_day_22"
+version = "0.1.0"
+dependencies = [
+ "criterion",
 ]

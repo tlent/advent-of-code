@@ -1,5 +1,5 @@
 [package]
-name = "day_11"
+name = "year_2022_day_11"
 version.workspace = true
 edition.workspace = true
 
@@ -13,6 +13,6 @@ nom.workspace = true
 criterion.workspace = true
 
 [[bench]]
-name = "day_11"
+name = "year_2022_day_11"
 path = "src/bench.rs"
 harness = false
