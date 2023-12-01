@@ -4,7 +4,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const LATEST_YEAR: u32 = 2022;
+const LATEST_YEAR: u32 = 2023;
 const EARLIEST_YEAR: u32 = 2015;
 
 const ADVENT_OF_CODE_URL: &str = "https://adventofcode.com";
