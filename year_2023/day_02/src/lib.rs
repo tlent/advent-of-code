@@ -84,11 +84,13 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        todo!()
+        let games = parse_input(INPUT);
+        assert_eq!(part_one(&games), 3_059);
     }
 
     #[test]
     fn test_part_two() {
-        todo!()
+        let games = parse_input(INPUT);
+        assert_eq!(part_two(&games), 65_371);
     }
 }
