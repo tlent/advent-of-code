@@ -65,7 +65,80 @@ fn is_symbol(b: u8) -> bool {
 }
 
 pub fn part_two(lines: &[&str]) -> u32 {
-    todo!()
+    let mut gear_ratios: Vec<u32> = vec![];
+    for (y, line) in lines.iter().enumerate() {
+        for (x, b) in line.bytes().enumerate() {
+            if b == b'*' {
+                let adjacent_numbers = adjacent_numbers(lines, (x, y));
+                if adjacent_numbers.len() == 2 {
+                    gear_ratios.push(adjacent_numbers.into_iter().product());
+                }
+            }
+        }
+    }
+    gear_ratios.into_iter().sum()
+}
+
+fn adjacent_numbers(lines: &[&str], (x, y): (usize, usize)) -> Vec<u32> {
+    let x_sub = x.checked_sub(1);
+    let y_sub = y.checked_sub(1);
+    let adjacent_coords: Vec<_> = [
+        x_sub.and_then(|x_sub| y_sub.map(|y_sub| (x_sub, y_sub))),
+        y_sub.map(|y_sub| (x, y_sub)),
+        y_sub.map(|y_sub| (x + 1, y_sub)),
+        x_sub.map(|x_sub| (x_sub, y)),
+        Some((x + 1, y)),
+        x_sub.map(|x_sub| (x_sub, y + 1)),
+        Some((x, y + 1)),
+        Some((x + 1, y + 1)),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    let mut coord_used = vec![false; adjacent_coords.len()];
+    let mut adjacent_numbers = vec![];
+    for (i, &(x, y)) in adjacent_coords.iter().enumerate() {
+        if coord_used[i] {
+            continue;
+        }
+        if let Some(line) = lines.get(y) {
+            if line
+                .as_bytes()
+                .get(x)
+                .filter(|b| b.is_ascii_digit())
+                .is_some()
+            {
+                let mut start = x;
+                while start > 0
+                    && line
+                        .as_bytes()
+                        .get(start - 1)
+                        .filter(|b| b.is_ascii_digit())
+                        .is_some()
+                {
+                    start -= 1;
+                    if let Some(i) = adjacent_coords.iter().position(|&c| c == (start, y)) {
+                        coord_used[i] = true;
+                    }
+                }
+                let mut end = x;
+                while line
+                    .as_bytes()
+                    .get(end + 1)
+                    .filter(|b| b.is_ascii_digit())
+                    .is_some()
+                {
+                    end += 1;
+                    if let Some(i) = adjacent_coords.iter().position(|&c| c == (end, y)) {
+                        coord_used[i] = true;
+                    }
+                }
+                let number = line[start..=end].parse().unwrap();
+                adjacent_numbers.push(number);
+            }
+        }
+    }
+    adjacent_numbers
 }
 
 #[cfg(test)]
