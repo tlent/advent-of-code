@@ -67,13 +67,13 @@ fn is_symbol(b: u8) -> bool {
 pub fn part_two(lines: &[&str]) -> u32 {
     let mut gear_ratios: Vec<u32> = vec![];
     for (y, line) in lines.iter().enumerate() {
-        for (x, b) in line.bytes().enumerate() {
-            if b == b'*' {
-                let adjacent_numbers = adjacent_numbers(lines, (x, y));
-                if adjacent_numbers.len() == 2 {
-                    gear_ratios.push(adjacent_numbers.into_iter().product());
-                }
+        let mut start = 0;
+        while let Some(x) = line[start..].find('*') {
+            let adjacent_numbers = adjacent_numbers(lines, (start + x, y));
+            if adjacent_numbers.len() == 2 {
+                gear_ratios.push(adjacent_numbers.into_iter().product());
             }
+            start += x + 1;
         }
     }
     gear_ratios.into_iter().sum()
