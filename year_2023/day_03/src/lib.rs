@@ -1,144 +1,105 @@
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
+
 pub const INPUT: &str = include_str!("../input.txt");
 
-pub fn parse_input(input: &str) -> Vec<&str> {
-    input.lines().collect()
+pub struct Schematic {
+    numbers: Vec<Number>,
+    gear_positions: Vec<Coordinate>,
+    symbol_positions: HashSet<Coordinate>,
 }
 
-pub fn part_one(lines: &[&str]) -> u32 {
-    let mut part_numbers: Vec<u32> = vec![];
-    for (y, line) in lines.iter().enumerate() {
-        let mut number_start = None;
-        let mut adjacent_to_symbol = false;
-        for (x, b) in line.bytes().enumerate() {
-            match b {
-                b'0'..=b'9' => {
-                    if number_start.is_none() {
-                        number_start = Some(x);
-                        adjacent_to_symbol = x
-                            .checked_sub(1)
-                            .map(|x_sub| {
-                                is_symbol(line.as_bytes()[x_sub])
-                                    || is_adjacent_to_symbol(lines, (x_sub, y))
-                            })
-                            .unwrap_or(false);
-                    }
-                    adjacent_to_symbol |= is_adjacent_to_symbol(lines, (x, y))
-                }
-                b'.' => {
-                    if let Some(start) = number_start {
-                        adjacent_to_symbol |= is_adjacent_to_symbol(lines, (x, y));
-                        if adjacent_to_symbol {
-                            let part_number = line[start..x].parse().unwrap();
-                            part_numbers.push(part_number);
-                        }
-                        number_start = None;
-                        adjacent_to_symbol = false;
-                    }
-                }
-                _ => {
-                    if let Some(start) = number_start {
-                        let part_number = line[start..x].parse().unwrap();
-                        part_numbers.push(part_number);
-                        number_start = None;
-                        adjacent_to_symbol = false;
-                    }
-                }
-            }
-        }
-        if number_start.is_some() && adjacent_to_symbol {
-            let part_number = line[number_start.unwrap()..].parse().unwrap();
-            part_numbers.push(part_number);
-        }
-    }
-    part_numbers.into_iter().sum()
+pub struct Number {
+    value: u32,
+    positions: Vec<Coordinate>,
 }
 
-fn is_adjacent_to_symbol(lines: &[&str], (x, y): (usize, usize)) -> bool {
-    [y.checked_sub(1).map(|y_sub| (x, y_sub)), Some((x, y + 1))]
-        .iter()
-        .filter_map(|&coord| coord.and_then(|(x, y)| lines.get(y).map(|line| line.as_bytes()[x])))
-        .any(is_symbol)
-}
+pub type Coordinate = (usize, usize);
 
-fn is_symbol(b: u8) -> bool {
-    b != b'.' && !b.is_ascii_digit()
-}
-
-pub fn part_two(lines: &[&str]) -> u32 {
-    let mut gear_ratios: Vec<u32> = vec![];
-    for (y, line) in lines.iter().enumerate() {
-        let mut start = 0;
-        while let Some(x) = line[start..].find('*') {
-            let adjacent_numbers = adjacent_numbers(lines, (start + x, y));
-            if adjacent_numbers.len() == 2 {
-                gear_ratios.push(adjacent_numbers.into_iter().product());
-            }
-            start += x + 1;
-        }
-    }
-    gear_ratios.into_iter().sum()
-}
-
-fn adjacent_numbers(lines: &[&str], (x, y): (usize, usize)) -> Vec<u32> {
-    let x_sub = x.checked_sub(1);
-    let y_sub = y.checked_sub(1);
-    let adjacent_coords: Vec<_> = [
-        x_sub.and_then(|x_sub| y_sub.map(|y_sub| (x_sub, y_sub))),
-        y_sub.map(|y_sub| (x, y_sub)),
-        y_sub.map(|y_sub| (x + 1, y_sub)),
-        x_sub.map(|x_sub| (x_sub, y)),
-        Some((x + 1, y)),
-        x_sub.map(|x_sub| (x_sub, y + 1)),
-        Some((x, y + 1)),
-        Some((x + 1, y + 1)),
-    ]
-    .into_iter()
-    .flatten()
-    .collect();
-    let mut coord_used = vec![false; adjacent_coords.len()];
-    let mut adjacent_numbers = vec![];
-    for (i, &(x, y)) in adjacent_coords.iter().enumerate() {
-        if coord_used[i] {
-            continue;
-        }
-        if let Some(line) = lines.get(y) {
-            if line
-                .as_bytes()
-                .get(x)
-                .filter(|b| b.is_ascii_digit())
-                .is_some()
-            {
-                let mut start = x;
-                while start > 0
-                    && line
-                        .as_bytes()
-                        .get(start - 1)
-                        .filter(|b| b.is_ascii_digit())
-                        .is_some()
-                {
-                    start -= 1;
-                    if let Some(i) = adjacent_coords.iter().position(|&c| c == (start, y)) {
-                        coord_used[i] = true;
-                    }
-                }
+pub fn parse_input(input: &str) -> Schematic {
+    let mut schematic = Schematic {
+        numbers: vec![],
+        gear_positions: vec![],
+        symbol_positions: HashSet::default(),
+    };
+    for (y, line) in input.lines().enumerate() {
+        let mut iter = line.bytes().enumerate().peekable();
+        while let Some((x, b)) = iter.next() {
+            if b.is_ascii_digit() {
+                let mut positions = vec![(x, y)];
+                let start = x;
                 let mut end = x;
-                while line
-                    .as_bytes()
-                    .get(end + 1)
-                    .filter(|b| b.is_ascii_digit())
-                    .is_some()
-                {
+                while let Some((_, b'0'..=b'9')) = iter.peek() {
+                    iter.next();
                     end += 1;
-                    if let Some(i) = adjacent_coords.iter().position(|&c| c == (end, y)) {
-                        coord_used[i] = true;
-                    }
+                    positions.push((end, y));
                 }
-                let number = line[start..=end].parse().unwrap();
-                adjacent_numbers.push(number);
+                let value = line[start..=end].parse().unwrap();
+                schematic.numbers.push(Number { value, positions });
+            } else if b == b'*' {
+                schematic.gear_positions.push((x, y));
+                schematic.symbol_positions.insert((x, y));
+            } else if b != b'.' {
+                schematic.symbol_positions.insert((x, y));
             }
         }
     }
-    adjacent_numbers
+    schematic
+}
+
+pub fn part_one(schematic: &Schematic) -> u32 {
+    schematic
+        .numbers
+        .iter()
+        .filter_map(|number| {
+            if number.positions.iter().any(|&p| {
+                adjacent_coordinates(p)
+                    .any(|adjacent| schematic.symbol_positions.contains(&adjacent))
+            }) {
+                Some(number.value)
+            } else {
+                None
+            }
+        })
+        .sum()
+}
+
+pub fn part_two(schematic: &Schematic) -> u32 {
+    let number_at_position: HashMap<Coordinate, (usize, u32)> = schematic
+        .numbers
+        .iter()
+        .enumerate()
+        .flat_map(|(i, number)| {
+            number
+                .positions
+                .iter()
+                .map(move |&p| (p, (i, number.value)))
+        })
+        .collect();
+    schematic
+        .gear_positions
+        .iter()
+        .filter_map(|&gear_position| {
+            let adjacent_numbers: HashSet<_> = adjacent_coordinates(gear_position)
+                .filter_map(|adjacent| number_at_position.get(&adjacent).copied())
+                .collect();
+            if adjacent_numbers.len() == 2 {
+                Some(
+                    adjacent_numbers
+                        .iter()
+                        .map(|(_, value)| value)
+                        .product::<u32>(),
+                )
+            } else {
+                None
+            }
+        })
+        .sum()
+}
+
+fn adjacent_coordinates((x, y): Coordinate) -> impl Iterator<Item = Coordinate> {
+    (x.saturating_sub(1)..=x + 1)
+        .flat_map(move |x| (y.saturating_sub(1)..=y + 1).map(move |y| (x, y)))
+        .filter(move |&coord| coord != (x, y))
 }
 
 #[cfg(test)]
