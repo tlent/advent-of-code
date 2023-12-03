@@ -147,11 +147,13 @@ mod test {
 
     #[test]
     fn test_part_one() {
-        todo!()
+        let lines = parse_input(INPUT);
+        assert_eq!(part_one(&lines), 544_664);
     }
 
     #[test]
     fn test_part_two() {
-        todo!()
+        let lines = parse_input(INPUT);
+        assert_eq!(part_two(&lines), 84_495_585);
     }
 }
