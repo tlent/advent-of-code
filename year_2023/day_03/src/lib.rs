@@ -25,7 +25,8 @@ pub fn parse_input(input: &str) -> Schematic {
         let mut iter = line.bytes().enumerate().peekable();
         while let Some((x, b)) = iter.next() {
             if b.is_ascii_digit() {
-                let mut positions = vec![(x, y)];
+                let mut positions = Vec::with_capacity(3);
+                positions.push((x, y));
                 let start = x;
                 let mut end = x;
                 while let Some((_, b'0'..=b'9')) = iter.peek() {
@@ -51,10 +52,12 @@ pub fn part_one(schematic: &Schematic) -> u32 {
         .numbers
         .iter()
         .filter_map(|number| {
-            if number.positions.iter().any(|&p| {
-                adjacent_coordinates(p)
-                    .any(|adjacent| schematic.symbol_positions.contains(&adjacent))
-            }) {
+            let (min_x, y) = number.positions[0];
+            let max_x = number.positions.last().unwrap().0;
+            let mut adjacent_coordinates = (min_x.saturating_sub(1)..=max_x + 1)
+                .flat_map(move |x| (y.saturating_sub(1)..=y + 1).map(move |y| (x, y)))
+                .filter(move |&(cx, cy)| cy != y || !(min_x..=max_x).contains(&cx));
+            if adjacent_coordinates.any(|adjacent| schematic.symbol_positions.contains(&adjacent)) {
                 Some(number.value)
             } else {
                 None
@@ -78,28 +81,24 @@ pub fn part_two(schematic: &Schematic) -> u32 {
     schematic
         .gear_positions
         .iter()
-        .filter_map(|&gear_position| {
-            let adjacent_numbers: HashSet<_> = adjacent_coordinates(gear_position)
+        .filter_map(|&(x, y)| {
+            let adjacent_coordinates = (x.saturating_sub(1)..=x + 1)
+                .flat_map(move |x| (y.saturating_sub(1)..=y + 1).map(move |y| (x, y)))
+                .filter(move |&coord| coord != (x, y));
+            let adjacent_numbers: HashSet<_> = adjacent_coordinates
                 .filter_map(|adjacent| number_at_position.get(&adjacent).copied())
                 .collect();
             if adjacent_numbers.len() == 2 {
-                Some(
-                    adjacent_numbers
-                        .iter()
-                        .map(|(_, value)| value)
-                        .product::<u32>(),
-                )
+                let product = adjacent_numbers
+                    .iter()
+                    .map(|(_, value)| value)
+                    .product::<u32>();
+                Some(product)
             } else {
                 None
             }
         })
         .sum()
-}
-
-fn adjacent_coordinates((x, y): Coordinate) -> impl Iterator<Item = Coordinate> {
-    (x.saturating_sub(1)..=x + 1)
-        .flat_map(move |x| (y.saturating_sub(1)..=y + 1).map(move |y| (x, y)))
-        .filter(move |&coord| coord != (x, y))
 }
 
 #[cfg(test)]
