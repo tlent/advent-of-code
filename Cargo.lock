@@ -1739,5 +1739,4 @@ name = "year_2023_day_04"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "rustc-hash",
 ]
