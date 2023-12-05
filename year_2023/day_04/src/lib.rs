@@ -1,13 +1,16 @@
 pub const INPUT: &str = include_str!("../input.txt");
 
 pub fn parse_input(input: &str) -> Vec<u32> {
+    let mut winning_numbers: Vec<u32> = Vec::with_capacity(10);
     input
         .lines()
         .map(|line| {
-            let winning_numbers: Vec<u32> = line[10..39]
-                .split_ascii_whitespace()
-                .map(|s| s.parse().unwrap())
-                .collect();
+            winning_numbers.clear();
+            winning_numbers.extend(
+                line[10..39]
+                    .split_ascii_whitespace()
+                    .map(|s| s.parse::<u32>().unwrap()),
+            );
             line[42..]
                 .split_ascii_whitespace()
                 .map(|s| s.parse().unwrap())
