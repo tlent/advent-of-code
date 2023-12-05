@@ -1,7 +1,7 @@
 pub const INPUT: &str = include_str!("../input.txt");
 
-pub fn parse_input(input: &str) -> Vec<u32> {
-    let mut winning_numbers: Vec<u32> = Vec::with_capacity(10);
+pub fn parse_input(input: &str) -> Vec<u8> {
+    let mut winning_numbers: Vec<u8> = Vec::with_capacity(10);
     input
         .lines()
         .map(|line| {
@@ -9,25 +9,31 @@ pub fn parse_input(input: &str) -> Vec<u32> {
             winning_numbers.extend(
                 line[10..39]
                     .split_ascii_whitespace()
-                    .map(|s| s.parse::<u32>().unwrap()),
+                    .map(|s| s.parse::<u8>().unwrap()),
             );
             line[42..]
                 .split_ascii_whitespace()
                 .map(|s| s.parse().unwrap())
                 .filter(|number| winning_numbers.contains(number))
-                .count() as u32
+                .count() as u8
         })
         .collect()
 }
 
-pub fn part_one(win_counts: &[u32]) -> u32 {
+pub fn part_one(win_counts: &[u8]) -> u32 {
     win_counts
         .iter()
-        .map(|&count| if count > 0 { 2u32.pow(count - 1) } else { 0 })
+        .map(|&count| {
+            if count > 0 {
+                2u32.pow(count as u32 - 1)
+            } else {
+                0
+            }
+        })
         .sum()
 }
 
-pub fn part_two(win_counts: &[u32]) -> u32 {
+pub fn part_two(win_counts: &[u8]) -> u32 {
     let mut card_counts = vec![1; win_counts.len()];
     for (index, &win_count) in win_counts.iter().enumerate() {
         let card_count = card_counts[index];
