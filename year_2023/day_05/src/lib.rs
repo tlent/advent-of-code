@@ -61,30 +61,32 @@ pub fn part_one(almanac: &Almanac) -> u64 {
 }
 
 pub fn part_two(almanac: &Almanac) -> u64 {
-    almanac
+    let seed_ranges: Vec<_> = almanac
         .seeds
         .chunks_exact(2)
-        .flat_map(|seed_range| {
-            let seed_range_start = seed_range[0];
-            let seed_range_length = seed_range[1];
-            (seed_range_start..seed_range_start + seed_range_length).map(|seed| {
-                let mut value = seed;
-                for map in almanac.maps.iter() {
-                    for (source_range, destination_range) in map {
-                        if source_range.contains(&value) {
-                            if source_range.start <= destination_range.start {
-                                value += destination_range.start - source_range.start;
-                            } else {
-                                value -= source_range.start - destination_range.start;
-                            }
-                            break;
+        .map(|chunk| {
+            let seed_range_start = chunk[0];
+            let seed_range_length = chunk[1];
+            seed_range_start..seed_range_start + seed_range_length
+        })
+        .collect();
+    (0..)
+        .find(|&location| {
+            let mut value = location;
+            for map in almanac.maps.iter().rev() {
+                for (source_range, destination_range) in map {
+                    if destination_range.contains(&value) {
+                        if destination_range.start <= source_range.start {
+                            value += source_range.start - destination_range.start;
+                        } else {
+                            value -= destination_range.start - source_range.start;
                         }
+                        break;
                     }
                 }
-                value
-            })
+            }
+            seed_ranges.iter().any(|range| range.contains(&value))
         })
-        .min()
         .unwrap()
 }
 
