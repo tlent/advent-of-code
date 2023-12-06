@@ -1,4 +1,5 @@
 use std::ops::Range;
+use std::{cmp, mem};
 
 pub const INPUT: &str = include_str!("../input.txt");
 
@@ -61,7 +62,7 @@ pub fn part_one(almanac: &Almanac) -> u64 {
 }
 
 pub fn part_two(almanac: &Almanac) -> u64 {
-    let seed_ranges: Vec<_> = almanac
+    let mut ranges: Vec<_> = almanac
         .seeds
         .chunks_exact(2)
         .map(|chunk| {
@@ -70,24 +71,43 @@ pub fn part_two(almanac: &Almanac) -> u64 {
             seed_range_start..seed_range_start + seed_range_length
         })
         .collect();
-    (0..)
-        .find(|&location| {
-            let mut value = location;
-            for map in almanac.maps.iter().rev() {
-                for (source_range, destination_range) in map {
-                    if destination_range.contains(&value) {
-                        if destination_range.start <= source_range.start {
-                            value += source_range.start - destination_range.start;
-                        } else {
-                            value -= destination_range.start - source_range.start;
-                        }
-                        break;
+    let mut mapped_ranges = vec![];
+    let mut unmapped_ranges = vec![];
+    for map in almanac.maps.iter() {
+        mapped_ranges.clear();
+        for (source, destination) in map {
+            unmapped_ranges.clear();
+            for range in ranges.drain(..) {
+                let mut overlap =
+                    cmp::max(source.start, range.start)..cmp::min(source.end, range.end);
+                if overlap.is_empty() {
+                    unmapped_ranges.push(range);
+                } else {
+                    let left = range.start..source.start;
+                    if !left.is_empty() {
+                        unmapped_ranges.push(left);
                     }
+                    let right = source.end..range.end;
+                    if !right.is_empty() {
+                        unmapped_ranges.push(right);
+                    }
+                    let offset = source.start.abs_diff(destination.start);
+                    if source.start <= destination.start {
+                        overlap.start += offset;
+                        overlap.end += offset;
+                    } else {
+                        overlap.start -= offset;
+                        overlap.end -= offset;
+                    }
+                    mapped_ranges.push(overlap);
                 }
             }
-            seed_ranges.iter().any(|range| range.contains(&value))
-        })
-        .unwrap()
+            mem::swap(&mut ranges, &mut unmapped_ranges);
+        }
+        mapped_ranges.append(&mut ranges);
+        mem::swap(&mut ranges, &mut mapped_ranges);
+    }
+    ranges.into_iter().map(|range| range.start).min().unwrap()
 }
 
 #[cfg(test)]
