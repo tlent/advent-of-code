@@ -48,9 +48,13 @@ pub fn part_one(races: &[Race]) -> u64 {
 }
 
 pub fn part_two(race: &Race) -> u64 {
-    (0..race.time)
-        .filter(|t| t * (race.time - t) > race.distance)
-        .count() as u64
+    let min_winning_time = (0..race.time)
+        .find(|t| t * (race.time - t) > race.distance)
+        .unwrap();
+    let max_winning_time = (0..race.time)
+        .rfind(|t| t * (race.time - t) > race.distance)
+        .unwrap();
+    race.time - (min_winning_time + (race.time - max_winning_time - 1))
 }
 
 #[cfg(test)]
