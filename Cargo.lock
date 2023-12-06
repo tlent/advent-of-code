@@ -1747,3 +1747,10 @@ version = "0.1.0"
 dependencies = [
  "criterion",
 ]
+
+[[package]]
+name = "year_2023_day_06"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
