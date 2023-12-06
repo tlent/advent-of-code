@@ -40,18 +40,38 @@ pub fn part_one(races: &[Race]) -> u64 {
     races
         .iter()
         .map(|race| {
-            (0..race.time)
-                .filter(|t| t * (race.time - t) > race.distance)
-                .count() as u64
+            let min_winning_time = min_winning_time(race).unwrap();
+            race.time - (2 * min_winning_time - 1)
         })
         .product()
 }
 
 pub fn part_two(race: &Race) -> u64 {
-    let min_winning_time = (0..race.time)
-        .find(|t| t * (race.time - t) > race.distance)
-        .unwrap();
+    let min_winning_time = min_winning_time(race).unwrap();
     race.time - (2 * min_winning_time - 1)
+}
+
+fn min_winning_time(race: &Race) -> Option<u64> {
+    let t = race.time as f64;
+    let d = race.distance as f64;
+    let discriminant = t * t - 4.0 * d;
+    if discriminant >= 0.0 {
+        [
+            (t + discriminant.sqrt()) / 2.0,
+            (t - discriminant.sqrt()) / 2.0,
+        ]
+        .into_iter()
+        .filter_map(|root| {
+            if root >= 0.0 && root <= t {
+                Some(root.ceil() as u64)
+            } else {
+                None
+            }
+        })
+        .min()
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]
