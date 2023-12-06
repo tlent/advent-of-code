@@ -51,10 +51,7 @@ pub fn part_two(race: &Race) -> u64 {
     let min_winning_time = (0..race.time)
         .find(|t| t * (race.time - t) > race.distance)
         .unwrap();
-    let max_winning_time = (0..race.time)
-        .rfind(|t| t * (race.time - t) > race.distance)
-        .unwrap();
-    race.time - (min_winning_time + (race.time - max_winning_time - 1))
+    race.time - (2 * min_winning_time - 1)
 }
 
 #[cfg(test)]
