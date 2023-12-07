@@ -29,19 +29,12 @@ pub enum HandType {
     FiveOfAKind,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Hand {
-    cards: [Card; 5],
-    bid: u32,
-    hand_type: HandType,
-}
-
-impl Hand {
-    pub fn new(cards: [Card; 5], bid: u32) -> Self {
+impl HandType {
+    fn from_cards(cards: &[Card; 5]) -> Self {
         let mut card_counts = [0; 14];
         let mut max_count = 0;
         let mut second_max_count = 0;
-        for &card in &cards {
+        for &card in cards {
             let count = &mut card_counts[card as usize];
             *count += 1;
             if card == Card::Joker {
@@ -54,7 +47,7 @@ impl Hand {
             }
         }
         max_count += card_counts[Card::Joker as usize];
-        let hand_type = match (max_count, second_max_count) {
+        match (max_count, second_max_count) {
             (5, _) => HandType::FiveOfAKind,
             (4, _) => HandType::FourOfAKind,
             (3, 2) => HandType::FullHouse,
@@ -62,13 +55,15 @@ impl Hand {
             (2, 2) => HandType::TwoPair,
             (2, _) => HandType::OnePair,
             _ => HandType::HighCard,
-        };
-        Self {
-            cards,
-            bid,
-            hand_type,
         }
     }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Hand {
+    cards: [Card; 5],
+    bid: u32,
+    hand_type: HandType,
 }
 
 impl Ord for Hand {
@@ -106,7 +101,12 @@ pub fn parse_input(input: &str) -> Vec<Hand> {
                 b => panic!("invalid byte {b}"),
             });
             let bid = line[6..].parse().unwrap();
-            Hand::new(cards, bid)
+            let hand_type = HandType::from_cards(&cards);
+            Hand {
+                cards,
+                bid,
+                hand_type,
+            }
         })
         .collect()
 }
@@ -127,7 +127,7 @@ pub fn part_two(hands: &mut [Hand]) -> u32 {
                 *card = Card::Joker;
             }
         }
-        *hand = Hand::new(hand.cards, hand.bid);
+        hand.hand_type = HandType::from_cards(&hand.cards);
     }
     hands.sort_unstable();
     hands
