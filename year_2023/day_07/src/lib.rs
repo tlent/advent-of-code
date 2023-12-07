@@ -62,26 +62,27 @@ impl Hand {
             };
             card_counts[index] += 1;
         }
+        if joker_count >= 0 {
+            *card_counts.iter_mut().max().unwrap() += joker_count;
+        }
         let max_count = *card_counts.iter().max().unwrap();
-        if max_count + joker_count == 5 {
+        if max_count == 5 {
             return HandType::FiveOfAKind;
         }
-        if max_count + joker_count == 4 {
+        if max_count == 4 {
             return HandType::FourOfAKind;
         }
         let pair_count = card_counts.iter().filter(|&&count| count == 2).count();
-        if (max_count == 3 && pair_count == 1)
-            || (max_count == 2 && joker_count == 1 && pair_count == 2)
-        {
+        if max_count == 3 && pair_count == 1 {
             return HandType::FullHouse;
         }
-        if max_count + joker_count == 3 {
+        if max_count == 3 {
             return HandType::ThreeOfAKind;
         }
         if pair_count == 2 {
             return HandType::TwoPair;
         }
-        if pair_count == 1 || joker_count == 1 {
+        if pair_count == 1 {
             return HandType::OnePair;
         }
         HandType::HighCard
