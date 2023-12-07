@@ -33,14 +33,15 @@ pub enum HandType {
 pub struct Hand {
     cards: [Card; 5],
     bid: u32,
+    hand_type: HandType,
 }
 
 impl Hand {
-    pub fn hand_type(&self) -> HandType {
+    pub fn new(cards: [Card; 5], bid: u32) -> Self {
         let mut card_counts = [0; 14];
         let mut max_count = 0;
         let mut second_max_count = 0;
-        for &card in &self.cards {
+        for &card in &cards {
             let count = &mut card_counts[card as usize];
             *count += 1;
             if card == Card::Joker {
@@ -53,7 +54,7 @@ impl Hand {
             }
         }
         max_count += card_counts[Card::Joker as usize];
-        match (max_count, second_max_count) {
+        let hand_type = match (max_count, second_max_count) {
             (5, _) => HandType::FiveOfAKind,
             (4, _) => HandType::FourOfAKind,
             (3, 2) => HandType::FullHouse,
@@ -61,13 +62,18 @@ impl Hand {
             (2, 2) => HandType::TwoPair,
             (2, _) => HandType::OnePair,
             _ => HandType::HighCard,
+        };
+        Self {
+            cards,
+            bid,
+            hand_type,
         }
     }
 }
 
 impl Ord for Hand {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (self.hand_type(), &self.cards).cmp(&(other.hand_type(), &other.cards))
+        (self.hand_type, &self.cards).cmp(&(other.hand_type, &other.cards))
     }
 }
 
@@ -100,7 +106,7 @@ pub fn parse_input(input: &str) -> Vec<Hand> {
                 b => panic!("invalid byte {b}"),
             });
             let bid = line[6..].parse().unwrap();
-            Hand { cards, bid }
+            Hand::new(cards, bid)
         })
         .collect()
 }
@@ -121,6 +127,7 @@ pub fn part_two(hands: &mut [Hand]) -> u32 {
                 *card = Card::Joker;
             }
         }
+        *hand = Hand::new(hand.cards, hand.bid);
     }
     hands.sort_unstable();
     hands
