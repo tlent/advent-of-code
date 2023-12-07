@@ -97,7 +97,7 @@ pub fn parse_input(input: &str) -> Vec<Hand> {
                 b'4' => Card::Four,
                 b'3' => Card::Three,
                 b'2' => Card::Two,
-                b => panic!("invalid byte {}", b),
+                b => panic!("invalid byte {b}"),
             });
             let bid = line[6..].parse().unwrap();
             Hand { cards, bid }
