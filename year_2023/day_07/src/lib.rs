@@ -122,12 +122,16 @@ pub fn part_one(hands: &mut [Hand]) -> u32 {
 
 pub fn part_two(hands: &mut [Hand]) -> u32 {
     for hand in hands.iter_mut() {
+        let mut changed_cards = false;
         for card in hand.cards.iter_mut() {
             if *card == Card::Jack {
                 *card = Card::Joker;
+                changed_cards = true;
             }
         }
-        hand.hand_type = HandType::from_cards(&hand.cards);
+        if changed_cards {
+            hand.hand_type = HandType::from_cards(&hand.cards);
+        }
     }
     hands.sort_unstable();
     hands
