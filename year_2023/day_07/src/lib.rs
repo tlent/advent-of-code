@@ -62,10 +62,9 @@ impl Hand {
             };
             card_counts[index] += 1;
         }
-        if joker_count >= 0 {
-            *card_counts.iter_mut().max().unwrap() += joker_count;
-        }
-        let max_count = *card_counts.iter().max().unwrap();
+        let max_count = card_counts.iter_mut().max().unwrap();
+        *max_count += joker_count;
+        let max_count = *max_count;
         if max_count == 5 {
             return HandType::FiveOfAKind;
         }
