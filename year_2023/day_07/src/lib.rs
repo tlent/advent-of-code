@@ -104,8 +104,7 @@ pub fn parse_input(input: &str) -> Vec<Hand> {
     input
         .lines()
         .map(|line| {
-            let (left, right) = line.split_once(' ').unwrap();
-            let cards = left
+            let cards = line[0..5]
                 .bytes()
                 .map(|b| match b {
                     b'A' => Card::Ace,
@@ -124,7 +123,7 @@ pub fn parse_input(input: &str) -> Vec<Hand> {
                     _ => panic!("invalid card"),
                 })
                 .collect();
-            let bid = right.parse().unwrap();
+            let bid = line[6..].parse().unwrap();
             Hand { cards, bid }
         })
         .collect()
