@@ -37,54 +37,31 @@ pub struct Hand {
 
 impl Hand {
     pub fn hand_type(&self) -> HandType {
-        let mut joker_count = 0;
-        let mut card_counts = [0; 13];
+        let mut card_counts = [0; 14];
+        let mut max_count = 0;
+        let mut second_max_count = 0;
         for &card in &self.cards {
+            let count = &mut card_counts[card as usize];
+            *count += 1;
             if card == Card::Joker {
-                joker_count += 1;
                 continue;
             }
-            let index = match card {
-                Card::Ace => 0,
-                Card::King => 1,
-                Card::Queen => 2,
-                Card::Jack => 3,
-                Card::Ten => 4,
-                Card::Nine => 5,
-                Card::Eight => 6,
-                Card::Seven => 7,
-                Card::Six => 8,
-                Card::Five => 9,
-                Card::Four => 10,
-                Card::Three => 11,
-                Card::Two => 12,
-                Card::Joker => unreachable!(),
-            };
-            card_counts[index] += 1;
+            if *count > max_count {
+                max_count = *count;
+            } else if *count > second_max_count {
+                second_max_count = *count;
+            }
         }
-        let max_count = card_counts.iter_mut().max().unwrap();
-        *max_count += joker_count;
-        let max_count = *max_count;
-        if max_count == 5 {
-            return HandType::FiveOfAKind;
+        max_count += card_counts[Card::Joker as usize];
+        match (max_count, second_max_count) {
+            (5, _) => HandType::FiveOfAKind,
+            (4, _) => HandType::FourOfAKind,
+            (3, 2) => HandType::FullHouse,
+            (3, _) => HandType::ThreeOfAKind,
+            (2, 2) => HandType::TwoPair,
+            (2, _) => HandType::OnePair,
+            _ => HandType::HighCard,
         }
-        if max_count == 4 {
-            return HandType::FourOfAKind;
-        }
-        let pair_count = card_counts.iter().filter(|&&count| count == 2).count();
-        if max_count == 3 && pair_count == 1 {
-            return HandType::FullHouse;
-        }
-        if max_count == 3 {
-            return HandType::ThreeOfAKind;
-        }
-        if pair_count == 2 {
-            return HandType::TwoPair;
-        }
-        if pair_count == 1 {
-            return HandType::OnePair;
-        }
-        HandType::HighCard
     }
 }
 
