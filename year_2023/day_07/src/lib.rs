@@ -115,7 +115,7 @@ pub fn part_one(hands: &mut [Hand]) -> u32 {
     hands.sort_unstable();
     hands
         .iter()
-        .zip(1..=hands.len() as u32)
+        .zip(1..)
         .map(|(hand, rank)| hand.bid * rank)
         .sum()
 }
@@ -136,7 +136,7 @@ pub fn part_two(hands: &mut [Hand]) -> u32 {
     hands.sort_unstable();
     hands
         .iter()
-        .zip(1..=hands.len() as u32)
+        .zip(1..)
         .map(|(hand, rank)| hand.bid * rank)
         .sum()
 }
