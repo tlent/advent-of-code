@@ -31,7 +31,7 @@ pub enum HandType {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Hand {
-    cards: Vec<Card>,
+    cards: [Card; 5],
     bid: u32,
 }
 
@@ -81,25 +81,24 @@ pub fn parse_input(input: &str) -> Vec<Hand> {
     input
         .lines()
         .map(|line| {
-            let cards = line[0..5]
-                .bytes()
-                .map(|b| match b {
-                    b'A' => Card::Ace,
-                    b'K' => Card::King,
-                    b'Q' => Card::Queen,
-                    b'J' => Card::Jack,
-                    b'T' => Card::Ten,
-                    b'9' => Card::Nine,
-                    b'8' => Card::Eight,
-                    b'7' => Card::Seven,
-                    b'6' => Card::Six,
-                    b'5' => Card::Five,
-                    b'4' => Card::Four,
-                    b'3' => Card::Three,
-                    b'2' => Card::Two,
-                    _ => panic!("invalid card"),
-                })
-                .collect();
+            let mut bytes = line[..5].bytes();
+            let mut cards = [Card::Joker; 5];
+            cards.fill_with(|| match bytes.next().unwrap() {
+                b'A' => Card::Ace,
+                b'K' => Card::King,
+                b'Q' => Card::Queen,
+                b'J' => Card::Jack,
+                b'T' => Card::Ten,
+                b'9' => Card::Nine,
+                b'8' => Card::Eight,
+                b'7' => Card::Seven,
+                b'6' => Card::Six,
+                b'5' => Card::Five,
+                b'4' => Card::Four,
+                b'3' => Card::Three,
+                b'2' => Card::Two,
+                b => panic!("invalid byte {}", b),
+            });
             let bid = line[6..].parse().unwrap();
             Hand { cards, bid }
         })
