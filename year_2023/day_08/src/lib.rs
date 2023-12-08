@@ -22,15 +22,12 @@ pub fn parse_input(input: &str) -> (&str, Map, Vec<u16>) {
 }
 
 fn hash(s: &str) -> u16 {
-    let mut hash = 0;
-    for b in s.bytes().take(3) {
-        hash <<= 5;
-        hash |= encode(b) as u16;
-    }
-    hash
+    s.bytes()
+        .take(3)
+        .fold(0, |hash, b| hash << 5 | encode(b) as u16)
 }
 
-fn encode(b: u8) -> u8 {
+const fn encode(b: u8) -> u8 {
     b - b'A'
 }
 
