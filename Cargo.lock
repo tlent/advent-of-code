@@ -1765,6 +1765,3 @@ dependencies = [
 [[package]]
 name = "year_2023_day_08"
 version = "0.1.0"
-dependencies = [
- "criterion",
-]

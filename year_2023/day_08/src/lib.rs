@@ -1,3 +1,6 @@
+#![feature(test)]
+extern crate test;
+
 pub const INPUT: &str = include_str!("../input.txt");
 
 const SIZE: usize = 2usize.pow(15);
@@ -70,8 +73,10 @@ where
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
+    use std::hint::black_box;
+    use test::Bencher;
 
     #[test]
     fn test_part_one() {
@@ -83,5 +88,22 @@ mod test {
     fn test_part_two() {
         let (turns, map, starts) = parse_input(INPUT);
         assert_eq!(part_two(turns, &map, &starts), 22_103_062_509_257);
+    }
+
+    #[bench]
+    fn bench_parse_input(b: &mut Bencher) {
+        b.iter(|| parse_input(black_box(INPUT)));
+    }
+
+    #[bench]
+    fn bench_part_one(b: &mut Bencher) {
+        let (turns, map, _) = parse_input(INPUT);
+        b.iter(|| part_one(black_box(turns), black_box(&map)));
+    }
+
+    #[bench]
+    fn bench_part_two(b: &mut Bencher) {
+        let (turns, map, starts) = parse_input(INPUT);
+        b.iter(|| part_two(black_box(turns), black_box(&map), black_box(&starts)));
     }
 }
