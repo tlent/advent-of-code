@@ -1716,51 +1716,30 @@ dependencies = [
 [[package]]
 name = "year_2023_day_01"
 version = "0.1.0"
-dependencies = [
- "criterion",
-]
 
 [[package]]
 name = "year_2023_day_02"
 version = "0.1.0"
-dependencies = [
- "criterion",
-]
 
 [[package]]
 name = "year_2023_day_03"
 version = "0.1.0"
-dependencies = [
- "criterion",
-]
 
 [[package]]
 name = "year_2023_day_04"
 version = "0.1.0"
-dependencies = [
- "criterion",
-]
 
 [[package]]
 name = "year_2023_day_05"
 version = "0.1.0"
-dependencies = [
- "criterion",
-]
 
 [[package]]
 name = "year_2023_day_06"
 version = "0.1.0"
-dependencies = [
- "criterion",
-]
 
 [[package]]
 name = "year_2023_day_07"
 version = "0.1.0"
-dependencies = [
- "criterion",
-]
 
 [[package]]
 name = "year_2023_day_08"

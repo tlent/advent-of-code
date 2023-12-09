@@ -8,9 +8,3 @@ edition.workspace = true
 [dependencies]
 
 [dev-dependencies]
-criterion.workspace = true
-
-[[bench]]
-name = "year_2023_day_04"
-path = "src/bench.rs"
-harness = false
