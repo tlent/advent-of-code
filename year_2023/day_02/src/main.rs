@@ -1,49 +1,48 @@
 #![feature(test)]
 extern crate test;
 
-use std::env;
+use std::{cmp, env};
 
 pub const INPUT: &str = include_str!("../input.txt");
 
 pub struct Game {
     id: u32,
-    samples: Vec<Sample>,
-}
-
-pub struct Sample {
-    red: u32,
-    green: u32,
-    blue: u32,
+    max_red: u32,
+    max_green: u32,
+    max_blue: u32,
 }
 
 pub fn parse_input(input: &str) -> Vec<Game> {
     input
         .lines()
         .map(|line| {
-            let (left, right) = line.split_once(": ").unwrap();
-            let id = left.split_once(' ').unwrap().1.parse().unwrap();
-            let samples = right
+            let mut id_end = 6;
+            while line.as_bytes()[id_end].is_ascii_digit() {
+                id_end += 1;
+            }
+            let id = line[5..id_end].parse().unwrap();
+            let mut max_red = 0;
+            let mut max_green = 0;
+            let mut max_blue = 0;
+            let color_counts = line[id_end + 2..]
                 .split("; ")
-                .map(|round| {
-                    let mut sample = Sample {
-                        red: 0,
-                        green: 0,
-                        blue: 0,
-                    };
-                    for s in round.split(", ") {
-                        let (count, color) = s.split_once(' ').unwrap();
-                        let count: u32 = count.parse().unwrap();
-                        match color {
-                            "red" => sample.red += count,
-                            "green" => sample.green += count,
-                            "blue" => sample.blue += count,
-                            _ => panic!("invalid color"),
-                        }
-                    }
-                    sample
-                })
-                .collect();
-            Game { id, samples }
+                .flat_map(|s| s.split(", "))
+                .map(|s| s.split_once(' ').unwrap());
+            for (count, color) in color_counts {
+                let count: u32 = count.parse().unwrap();
+                match color {
+                    "red" => max_red = cmp::max(max_red, count),
+                    "green" => max_green = cmp::max(max_green, count),
+                    "blue" => max_blue = cmp::max(max_blue, count),
+                    c => panic!("invalid color {c}"),
+                };
+            }
+            Game {
+                id,
+                max_red,
+                max_green,
+                max_blue,
+            }
         })
         .collect()
 }
@@ -55,9 +54,9 @@ pub fn part_one(games: &[Game]) -> u32 {
     games
         .iter()
         .filter(|game| {
-            game.samples.iter().all(|sample| {
-                sample.red <= RED_LIMIT && sample.green <= GREEN_LIMIT && sample.blue <= BLUE_LIMIT
-            })
+            game.max_red <= RED_LIMIT
+                && game.max_green <= GREEN_LIMIT
+                && game.max_blue <= BLUE_LIMIT
         })
         .map(|game| game.id)
         .sum()
@@ -66,17 +65,7 @@ pub fn part_one(games: &[Game]) -> u32 {
 pub fn part_two(games: &[Game]) -> u32 {
     games
         .iter()
-        .map(|game| {
-            let max_red = game.samples.iter().map(|sample| sample.red).max().unwrap();
-            let max_green = game
-                .samples
-                .iter()
-                .map(|sample| sample.green)
-                .max()
-                .unwrap();
-            let max_blue = game.samples.iter().map(|sample| sample.blue).max().unwrap();
-            max_red * max_green * max_blue
-        })
+        .map(|game| game.max_red * game.max_green * game.max_blue)
         .sum()
 }
 
