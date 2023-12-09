@@ -21,14 +21,13 @@ pub fn parse_input(input: &str) -> (&str, Map, Vec<u16>) {
     (turns_line, map, starts)
 }
 
-fn hash(s: &str) -> u16 {
-    s.bytes()
-        .take(3)
-        .fold(0, |hash, b| hash << 5 | encode(b) as u16)
+const fn hash(s: &str) -> u16 {
+    let bytes = s.as_bytes();
+    encode(bytes[0]) << 10 | encode(bytes[1]) << 5 | encode(bytes[2])
 }
 
-const fn encode(b: u8) -> u8 {
-    b - b'A'
+const fn encode(b: u8) -> u16 {
+    (b - b'A') as u16
 }
 
 pub fn part_one(turns: &str, map: &Map) -> u64 {
@@ -36,7 +35,7 @@ pub fn part_one(turns: &str, map: &Map) -> u64 {
 }
 
 pub fn part_two(turns: &str, map: &Map, starts: &[u16]) -> u64 {
-    let is_target = |h: u16| h & 0b11111 == encode(b'Z') as u16;
+    let is_target = |h: u16| h & 0b11111 == encode(b'Z');
     starts
         .iter()
         .map(|&start| steps_to_target(turns, map, start, is_target))
