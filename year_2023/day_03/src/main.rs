@@ -10,7 +10,7 @@ pub fn parse_input(input: &str) -> Vec<&str> {
 }
 
 pub fn part_one(lines: &[&str]) -> u32 {
-    let mut part_numbers: Vec<u32> = vec![];
+    let mut sum = 0;
     for (y, line) in lines.iter().enumerate() {
         let mut number_start = None;
         let mut adjacent_to_symbol = false;
@@ -33,8 +33,8 @@ pub fn part_one(lines: &[&str]) -> u32 {
                     if let Some(start) = number_start {
                         adjacent_to_symbol |= is_adjacent_to_symbol(lines, (x, y));
                         if adjacent_to_symbol {
-                            let part_number = line[start..x].parse().unwrap();
-                            part_numbers.push(part_number);
+                            let part_number: u32 = line[start..x].parse().unwrap();
+                            sum += part_number;
                         }
                         number_start = None;
                         adjacent_to_symbol = false;
@@ -42,8 +42,8 @@ pub fn part_one(lines: &[&str]) -> u32 {
                 }
                 _ => {
                     if let Some(start) = number_start {
-                        let part_number = line[start..x].parse().unwrap();
-                        part_numbers.push(part_number);
+                        let part_number: u32 = line[start..x].parse().unwrap();
+                        sum += part_number;
                         number_start = None;
                         adjacent_to_symbol = false;
                     }
@@ -51,11 +51,11 @@ pub fn part_one(lines: &[&str]) -> u32 {
             }
         }
         if number_start.is_some() && adjacent_to_symbol {
-            let part_number = line[number_start.unwrap()..].parse().unwrap();
-            part_numbers.push(part_number);
+            let part_number: u32 = line[number_start.unwrap()..].parse().unwrap();
+            sum += part_number;
         }
     }
-    part_numbers.into_iter().sum()
+    sum
 }
 
 fn is_adjacent_to_symbol(lines: &[&str], (x, y): (usize, usize)) -> bool {
@@ -70,24 +70,23 @@ fn is_symbol(b: u8) -> bool {
 }
 
 pub fn part_two(lines: &[&str]) -> u32 {
-    let mut gear_ratios: Vec<u32> = vec![];
+    let mut sum = 0;
     for (y, line) in lines.iter().enumerate() {
         let mut start = 0;
-        while let Some(x) = line[start..].find('*') {
-            let adjacent_numbers = adjacent_numbers(lines, (start + x, y));
-            if adjacent_numbers.len() == 2 {
-                gear_ratios.push(adjacent_numbers.into_iter().product());
+        while let Some(i) = line[start..].find('*') {
+            if let Some(product) = two_adjacents_product(lines, (start + i, y)) {
+                sum += product;
             }
-            start += x + 1;
+            start += i + 1;
         }
     }
-    gear_ratios.into_iter().sum()
+    sum
 }
 
-fn adjacent_numbers(lines: &[&str], (x, y): (usize, usize)) -> Vec<u32> {
+fn two_adjacents_product(lines: &[&str], (x, y): (usize, usize)) -> Option<u32> {
     let x_sub = x.checked_sub(1);
     let y_sub = y.checked_sub(1);
-    let adjacent_coords: Vec<_> = [
+    let adjacent_coords = [
         x_sub.and_then(|x_sub| y_sub.map(|y_sub| (x_sub, y_sub))),
         y_sub.map(|y_sub| (x, y_sub)),
         y_sub.map(|y_sub| (x + 1, y_sub)),
@@ -96,54 +95,48 @@ fn adjacent_numbers(lines: &[&str], (x, y): (usize, usize)) -> Vec<u32> {
         x_sub.map(|x_sub| (x_sub, y + 1)),
         Some((x, y + 1)),
         Some((x + 1, y + 1)),
-    ]
-    .into_iter()
-    .flatten()
-    .collect();
-    let mut coord_used = vec![false; adjacent_coords.len()];
-    let mut adjacent_numbers = vec![];
-    for (i, &(x, y)) in adjacent_coords.iter().enumerate() {
-        if coord_used[i] {
+    ];
+    let mut coord_used = [false; 8];
+    let mut adjacent_number_count = 0;
+    let mut product = 1;
+    let iter = adjacent_coords.iter().flatten().enumerate();
+    for (i, &(x, y)) in iter {
+        if coord_used[i] || y >= lines.len() || x >= lines[0].len() {
             continue;
         }
-        if let Some(line) = lines.get(y) {
-            if line
-                .as_bytes()
-                .get(x)
-                .filter(|b| b.is_ascii_digit())
-                .is_some()
-            {
-                let mut start = x;
-                while start > 0
-                    && line
-                        .as_bytes()
-                        .get(start - 1)
-                        .filter(|b| b.is_ascii_digit())
-                        .is_some()
-                {
-                    start -= 1;
-                    if let Some(i) = adjacent_coords.iter().position(|&c| c == (start, y)) {
-                        coord_used[i] = true;
-                    }
-                }
-                let mut end = x;
-                while line
-                    .as_bytes()
-                    .get(end + 1)
-                    .filter(|b| b.is_ascii_digit())
-                    .is_some()
-                {
-                    end += 1;
-                    if let Some(i) = adjacent_coords.iter().position(|&c| c == (end, y)) {
-                        coord_used[i] = true;
-                    }
-                }
-                let number = line[start..=end].parse().unwrap();
-                adjacent_numbers.push(number);
+        let line = lines[y];
+        let bytes = line.as_bytes();
+        if !bytes[x].is_ascii_digit() {
+            continue;
+        }
+        adjacent_number_count += 1;
+        if adjacent_number_count > 2 {
+            return None;
+        }
+        let start = bytes[..x]
+            .iter()
+            .rposition(|b| !b.is_ascii_digit())
+            .map(|i| i + 1)
+            .unwrap_or(0);
+        let end = bytes[x + 1..]
+            .iter()
+            .position(|b| !b.is_ascii_digit())
+            .map(|i| i + x + 1)
+            .unwrap_or(bytes.len());
+        let number: u32 = line[start..end].parse().unwrap();
+        product *= number;
+        for x in start..end {
+            let mut iter = adjacent_coords.iter().flatten();
+            if let Some(i) = iter.position(|&c| c == (x, y)) {
+                coord_used[i] = true;
             }
         }
     }
-    adjacent_numbers
+    if adjacent_number_count == 2 {
+        Some(product)
+    } else {
+        None
+    }
 }
 
 fn main() {
