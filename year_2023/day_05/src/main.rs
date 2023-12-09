@@ -1,9 +1,8 @@
 #![feature(test)]
 extern crate test;
 
-use std::env;
 use std::ops::Range;
-use std::{cmp, mem};
+use std::{cmp, env, mem};
 
 pub const INPUT: &str = include_str!("../input.txt");
 

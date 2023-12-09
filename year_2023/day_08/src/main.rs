@@ -1,5 +1,6 @@
 #![feature(test)]
 extern crate test;
+
 use std::env;
 
 pub const INPUT: &str = include_str!("../input.txt");
