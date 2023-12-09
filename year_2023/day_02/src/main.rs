@@ -5,9 +5,6 @@ use std::env;
 
 pub const INPUT: &str = include_str!("../input.txt");
 
-type ParsedInput = Vec<Game>;
-type Output = u32;
-
 pub struct Game {
     id: u32,
     samples: Vec<Sample>,
@@ -19,7 +16,7 @@ pub struct Sample {
     blue: u32,
 }
 
-pub fn parse_input(input: &str) -> ParsedInput {
+pub fn parse_input(input: &str) -> Vec<Game> {
     input
         .lines()
         .map(|line| {
@@ -51,7 +48,7 @@ pub fn parse_input(input: &str) -> ParsedInput {
         .collect()
 }
 
-pub fn part_one(games: &ParsedInput) -> Output {
+pub fn part_one(games: &[Game]) -> u32 {
     const RED_LIMIT: u32 = 12;
     const GREEN_LIMIT: u32 = 13;
     const BLUE_LIMIT: u32 = 14;
@@ -66,7 +63,7 @@ pub fn part_one(games: &ParsedInput) -> Output {
         .sum()
 }
 
-pub fn part_two(games: &ParsedInput) -> Output {
+pub fn part_two(games: &[Game]) -> u32 {
     games
         .iter()
         .map(|game| {

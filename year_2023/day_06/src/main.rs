@@ -5,12 +5,17 @@ use std::env;
 
 pub const INPUT: &str = include_str!("../input.txt");
 
+pub struct Input {
+    part_one_races: Vec<Race>,
+    part_two_race: Race,
+}
+
 pub struct Race {
     time: u64,
     distance: u64,
 }
 
-pub fn parse_input(input: &str) -> (Vec<Race>, Race) {
+pub fn parse_input(input: &str) -> Input {
     let mut lines = input.lines();
     let time_line = lines.next().unwrap();
     let distance_line = lines.next().unwrap();
@@ -28,7 +33,10 @@ pub fn parse_input(input: &str) -> (Vec<Race>, Race) {
         time: parse_digits(&time_line[12..]),
         distance: parse_digits(&distance_line[12..]),
     };
-    (part_one_races, part_two_race)
+    Input {
+        part_one_races,
+        part_two_race,
+    }
 }
 
 fn parse_digits(s: &str) -> u64 {
@@ -41,8 +49,9 @@ fn parse_digits(s: &str) -> u64 {
     value
 }
 
-pub fn part_one(races: &[Race]) -> u64 {
-    races
+pub fn part_one(input: &Input) -> u64 {
+    input
+        .part_one_races
         .iter()
         .map(|race| {
             let min_winning_time = min_winning_time(race).unwrap();
@@ -51,7 +60,8 @@ pub fn part_one(races: &[Race]) -> u64 {
         .product()
 }
 
-pub fn part_two(race: &Race) -> u64 {
+pub fn part_two(input: &Input) -> u64 {
+    let race = &input.part_two_race;
     let min_winning_time = min_winning_time(race).unwrap();
     race.time - (2 * min_winning_time - 1)
 }
@@ -80,21 +90,21 @@ fn min_winning_time(race: &Race) -> Option<u64> {
 }
 
 fn main() {
-    let (part_one_races, part_two_race) = parse_input(INPUT);
+    let input = parse_input(INPUT);
     match env::args().nth(1).as_deref() {
         Some("all") => {
-            let part_one = part_one(&part_one_races);
+            let part_one = part_one(&input);
             println!("{part_one}");
-            let part_two = part_two(&part_two_race);
+            let part_two = part_two(&input);
             println!("{part_two}");
         }
         Some("parse") => {}
         Some("one") => {
-            let part_one = part_one(&part_one_races);
+            let part_one = part_one(&input);
             println!("{part_one}");
         }
         Some("two") => {
-            let part_two = part_two(&part_two_race);
+            let part_two = part_two(&input);
             println!("{part_two}");
         }
         _ => println!("Invalid argument: must be one of all, parse, one, or two"),
@@ -109,14 +119,14 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let (part_one_races, _) = parse_input(INPUT);
-        assert_eq!(part_one(&part_one_races), 1_413_720);
+        let input = parse_input(INPUT);
+        assert_eq!(part_one(&input), 1_413_720);
     }
 
     #[test]
     fn test_part_two() {
-        let (_, part_two_race) = parse_input(INPUT);
-        assert_eq!(part_two(&part_two_race), 30_565_288);
+        let input = parse_input(INPUT);
+        assert_eq!(part_two(&input), 30_565_288);
     }
 
     #[bench]
@@ -126,13 +136,13 @@ mod tests {
 
     #[bench]
     fn bench_part_one(b: &mut Bencher) {
-        let (part_one_races, _) = parse_input(INPUT);
-        b.iter(|| part_one(black_box(&part_one_races)));
+        let input = parse_input(INPUT);
+        b.iter(|| part_one(black_box(&input)));
     }
 
     #[bench]
     fn bench_part_two(b: &mut Bencher) {
-        let (_, part_two_race) = parse_input(INPUT);
-        b.iter(|| part_two(black_box(&part_two_race)));
+        let input = parse_input(INPUT);
+        b.iter(|| part_two(black_box(&input)));
     }
 }
