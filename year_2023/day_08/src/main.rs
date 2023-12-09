@@ -8,7 +8,7 @@ pub const INPUT: &str = include_str!("../input.txt");
 const SIZE: usize = 2usize.pow(15);
 type Map = [u32; SIZE];
 
-pub fn parse_input(input: &str) -> (&str, Map, Vec<u16>) {
+pub fn parse_input(input: &str) -> (&str, Map, Vec<u32>) {
     let mut lines = input.lines();
     let turns_line = lines.next().unwrap();
     lines.next();
@@ -18,7 +18,7 @@ pub fn parse_input(input: &str) -> (&str, Map, Vec<u16>) {
         let id = hash(&line[..3]);
         let left = hash(&line[7..10]);
         let right = hash(&line[12..15]);
-        map[id as usize] = (left as u32) << 15 | right as u32;
+        map[id as usize] = left << 15 | right;
         if line.as_bytes()[2] == b'A' {
             starts.push(id);
         }
@@ -26,21 +26,21 @@ pub fn parse_input(input: &str) -> (&str, Map, Vec<u16>) {
     (turns_line, map, starts)
 }
 
-const fn hash(s: &str) -> u16 {
+const fn hash(s: &str) -> u32 {
     let bytes = s.as_bytes();
     encode(bytes[0]) << 10 | encode(bytes[1]) << 5 | encode(bytes[2])
 }
 
-const fn encode(b: u8) -> u16 {
-    (b - b'A') as u16
+const fn encode(b: u8) -> u32 {
+    (b - b'A') as u32
 }
 
 pub fn part_one(turns: &str, map: &Map) -> u64 {
     steps_to_target(turns, map, hash("AAA"), |h| h == hash("ZZZ"))
 }
 
-pub fn part_two(turns: &str, map: &Map, starts: &[u16]) -> u64 {
-    let is_target = |h: u16| h & 0b11111 == encode(b'Z');
+pub fn part_two(turns: &str, map: &Map, starts: &[u32]) -> u64 {
+    let is_target = |h: u32| h & 0b11111 == encode(b'Z');
     starts
         .iter()
         .map(|&start| steps_to_target(turns, map, start, is_target))
@@ -55,17 +55,17 @@ pub fn part_two(turns: &str, map: &Map, starts: &[u16]) -> u64 {
         .unwrap()
 }
 
-fn steps_to_target<F>(turns: &str, map: &Map, start: u16, is_target: F) -> u64
+fn steps_to_target<F>(turns: &str, map: &Map, start: u32, is_target: F) -> u64
 where
-    F: Fn(u16) -> bool,
+    F: Fn(u32) -> bool,
 {
     let mut turns = turns.bytes().cycle();
     let mut current = start;
     (1..)
         .find(|_| {
             let value = map[current as usize];
-            let left = (value >> 15) as u16;
-            let right = (value & 0x7FFF) as u16;
+            let left = value >> 15;
+            let right = value & 0x7FFF;
             current = match turns.next().unwrap() {
                 b'L' => left,
                 b'R' => right,
