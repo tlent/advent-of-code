@@ -64,11 +64,9 @@ where
     (1..)
         .find(|_| {
             let value = map[current as usize];
-            let left = value >> 15;
-            let right = value & 0x7FFF;
             current = match turns.next().unwrap() {
-                b'L' => left,
-                b'R' => right,
+                b'L' => value >> 15,
+                b'R' => value & 0x7FFF,
                 b => panic!("invalid turn {b}"),
             };
             is_target(current)
