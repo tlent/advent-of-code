@@ -4,19 +4,13 @@ extern crate test;
 use std::env;
 
 pub const INPUT: &str = include_str!("../input.txt");
-pub const SIZE: usize = 2usize.pow(15);
 
-pub type Map = [u32; SIZE];
+const SIZE: usize = 2usize.pow(15);
+type Map = [u32; SIZE];
 
-pub struct Input<'a> {
-    turns: &'a str,
-    map: Map,
-    starts: Vec<u32>,
-}
-
-pub fn parse_input(input: &str) -> Input {
+pub fn parse_input(input: &str) -> (&str, Map, Vec<u32>) {
     let mut lines = input.lines();
-    let turns = lines.next().unwrap();
+    let turns_line = lines.next().unwrap();
     lines.next();
     let mut map = [0; SIZE];
     let mut starts = vec![];
@@ -29,7 +23,7 @@ pub fn parse_input(input: &str) -> Input {
             starts.push(id);
         }
     }
-    Input { turns, map, starts }
+    (turns_line, map, starts)
 }
 
 const fn hash(s: &str) -> u32 {
@@ -41,16 +35,15 @@ const fn encode(b: u8) -> u32 {
     (b - b'A') as u32
 }
 
-pub fn part_one(input: &Input) -> u64 {
-    steps_to_target(input.turns, &input.map, hash("AAA"), |h| h == hash("ZZZ"))
+pub fn part_one(turns: &str, map: &Map) -> u64 {
+    steps_to_target(turns, map, hash("AAA"), |h| h == hash("ZZZ"))
 }
 
-pub fn part_two(input: &Input) -> u64 {
+pub fn part_two(turns: &str, map: &Map, starts: &[u32]) -> u64 {
     let is_target = |h: u32| h & 0b11111 == encode(b'Z');
-    input
-        .starts
+    starts
         .iter()
-        .map(|&start| steps_to_target(input.turns, &input.map, start, is_target))
+        .map(|&start| steps_to_target(turns, map, start, is_target))
         .reduce(|a, b| {
             let mut gcd = a;
             let mut remainder = b;
@@ -82,21 +75,21 @@ where
 }
 
 fn main() {
-    let input = parse_input(INPUT);
+    let (turns, map, starts) = parse_input(INPUT);
     match env::args().nth(1).as_deref() {
         Some("all") => {
-            let part_one = part_one(&input);
+            let part_one = part_one(turns, &map);
             println!("{part_one}");
-            let part_two = part_two(&input);
+            let part_two = part_two(turns, &map, &starts);
             println!("{part_two}");
         }
         Some("parse") => {}
         Some("one") => {
-            let part_one = part_one(&input);
+            let part_one = part_one(turns, &map);
             println!("{part_one}");
         }
         Some("two") => {
-            let part_two = part_two(&input);
+            let part_two = part_two(turns, &map, &starts);
             println!("{part_two}");
         }
         _ => println!("Invalid argument: must be one of all, parse, one, or two"),
@@ -111,14 +104,14 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let input = parse_input(INPUT);
-        assert_eq!(part_one(&input), 20_093);
+        let (turns, map, _) = parse_input(INPUT);
+        assert_eq!(part_one(turns, &map), 20_093);
     }
 
     #[test]
     fn test_part_two() {
-        let input = parse_input(INPUT);
-        assert_eq!(part_two(&input), 22_103_062_509_257);
+        let (turns, map, starts) = parse_input(INPUT);
+        assert_eq!(part_two(turns, &map, &starts), 22_103_062_509_257);
     }
 
     #[bench]
@@ -128,13 +121,13 @@ mod tests {
 
     #[bench]
     fn bench_part_one(b: &mut Bencher) {
-        let input = parse_input(INPUT);
-        b.iter(|| part_one(black_box(&input)));
+        let (turns, map, _) = parse_input(INPUT);
+        b.iter(|| part_one(black_box(turns), black_box(&map)));
     }
 
     #[bench]
     fn bench_part_two(b: &mut Bencher) {
-        let input = parse_input(INPUT);
-        b.iter(|| part_two(black_box(&input)));
+        let (turns, map, starts) = parse_input(INPUT);
+        b.iter(|| part_two(black_box(turns), black_box(&map), black_box(&starts)));
     }
 }
