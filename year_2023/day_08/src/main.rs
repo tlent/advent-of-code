@@ -6,19 +6,19 @@ use std::env;
 pub const INPUT: &str = include_str!("../input.txt");
 
 const SIZE: usize = 2usize.pow(15);
-type Map = [(u16, u16); SIZE];
+type Map = [u32; SIZE];
 
 pub fn parse_input(input: &str) -> (&str, Map, Vec<u16>) {
     let mut lines = input.lines();
     let turns_line = lines.next().unwrap();
     lines.next();
-    let mut map = [(0, 0); SIZE];
+    let mut map = [0; SIZE];
     let mut starts = vec![];
     for line in lines {
         let id = hash(&line[..3]);
         let left = hash(&line[7..10]);
         let right = hash(&line[12..15]);
-        map[id as usize] = (left, right);
+        map[id as usize] = (left as u32) << 15 | right as u32;
         if line.as_bytes()[2] == b'A' {
             starts.push(id);
         }
@@ -63,7 +63,9 @@ where
     let mut current = start;
     (1..)
         .find(|_| {
-            let (left, right) = map[current as usize];
+            let value = map[current as usize];
+            let left = (value >> 15) as u16;
+            let right = (value & 0x7FFF) as u16;
             current = match turns.next().unwrap() {
                 b'L' => left,
                 b'R' => right,
