@@ -14,8 +14,6 @@ const COOKIE_PATH: &str = "project_generator/cookie";
 const TEMPLATES_PATH: &str = "project_generator/templates";
 const CARGO_TEMPLATE: &str = "Cargo.toml.template";
 const MAIN_TEMPLATE: &str = "main.rs.template";
-const LIB_TEMPLATE: &str = "lib.rs.template";
-const BENCH_TEMPLATE: &str = "bench.rs.template";
 
 fn main() -> Result<()> {
     let (year, day_number) = read_args()?;
@@ -26,8 +24,6 @@ fn main() -> Result<()> {
     let pairs = [
         (CARGO_TEMPLATE, project_path.join("Cargo.toml")),
         (MAIN_TEMPLATE, src_path.join("main.rs")),
-        (LIB_TEMPLATE, src_path.join("lib.rs")),
-        (BENCH_TEMPLATE, src_path.join("bench.rs")),
     ];
     let templates_path = Path::new(TEMPLATES_PATH);
     for (template_name, output_path) in pairs {
