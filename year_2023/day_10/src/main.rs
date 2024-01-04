@@ -120,44 +120,49 @@ fn part_one(pipe_tiles: &PositionSet) -> usize {
 }
 
 fn part_two(input: &Input, pipe_tiles: &PositionSet) -> usize {
-    let (mut x, mut y) = input.start;
-    if x > 0 && ![b'-', b'L', b'F'].contains(&input.lines[y][x - 1]) {
-        x -= 1;
-    } else if y > 0 && ![b'|', b'7', b'F'].contains(&input.lines[y - 1][x]) {
-        y -= 1;
-    } else {
-        x += 1;
-    };
-    let mut unenclosed_tile_count = 0;
-    let mut stack = vec![(x, y)];
-    let mut seen = PositionSet::new(input.tile_row_size, input.tile_column_size);
-    while let Some(position @ (x, y)) = stack.pop() {
-        if seen.contains(position) {
-            continue;
-        }
-        seen.insert(position);
-        if pipe_tiles.contains(position) {
-        } else {
-            unenclosed_tile_count += 1;
-            let adjacent = [
-                x.checked_sub(1).map(|x_sub| (x_sub, y)),
-                y.checked_sub(1).map(|y_sub| (x, y_sub)),
-                Some(x + 1)
-                    .filter(|&x_plus| x_plus < input.tile_row_size)
-                    .map(|x_plus| (x_plus, y)),
-                Some(y + 1)
-                    .filter(|&y_plus| y_plus < input.tile_column_size)
-                    .map(|y_plus| (x, y_plus)),
-            ];
-            stack.extend(
-                adjacent
-                    .into_iter()
-                    .flatten()
-                    .filter(|&position| !seen.contains(position)),
-            );
+    let mut enclosed_tile_count = 0;
+    for (y, line) in input.lines.iter().enumerate() {
+        let mut blocked_top = false;
+        let mut blocked_bottom = false;
+        let mut inside = false;
+        for (x, &b) in line.iter().enumerate() {
+            if !pipe_tiles.contains((x, y)) {
+                blocked_top = false;
+                blocked_bottom = false;
+                if inside {
+                    enclosed_tile_count += 1;
+                }
+                continue;
+            }
+            let connected_left = [b'-', b'7', b'J'].contains(&b)
+                || (b == b'S'
+                    && x > 0
+                    && pipe_tiles.contains((x - 1, y))
+                    && [b'-', b'L', b'F'].contains(&input.lines[y][x - 1]));
+            let connected_up = [b'|', b'J', b'L'].contains(&b)
+                || (b == b'S'
+                    && y > 0
+                    && pipe_tiles.contains((x, y - 1))
+                    && [b'|', b'7', b'F'].contains(&input.lines[y - 1][x]));
+            let connected_down = [b'|', b'7', b'F'].contains(&b)
+                || (b == b'S'
+                    && pipe_tiles.contains((x, y + 1))
+                    && [b'|', b'L', b'J'].contains(&input.lines[y + 1][x]));
+            if connected_left {
+                blocked_top |= connected_up;
+                blocked_bottom |= connected_down;
+            } else {
+                blocked_top = connected_up;
+                blocked_bottom = connected_down;
+            }
+            if blocked_top && blocked_bottom {
+                blocked_top = false;
+                blocked_bottom = false;
+                inside = !inside;
+            }
         }
     }
-    input.tile_row_size * input.tile_column_size - pipe_tiles.len() - unenclosed_tile_count
+    enclosed_tile_count
 }
 
 fn main() {
@@ -200,7 +205,7 @@ mod tests {
     fn test_part_two() {
         let input = parse_input(INPUT);
         let pipe_tiles = find_pipe_tiles(&input);
-        assert_eq!(part_two(&input, &pipe_tiles), 0);
+        assert_eq!(part_two(&input, &pipe_tiles), 511);
     }
 
     #[bench]
