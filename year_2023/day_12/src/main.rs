@@ -20,12 +20,12 @@ fn part_one(input: &[(&str, Vec<usize>)]) -> u32 {
         let mut candidates = vec![vec![]];
         for b in row.bytes() {
             if b == b'?' {
-                for candidate in candidates.iter_mut() {
-                    candidate.push(b'.');
-                }
                 let mut candidates_with_damaged = candidates.clone();
                 for candidate in candidates_with_damaged.iter_mut() {
                     candidate.push(b'#');
+                }
+                for candidate in candidates.iter_mut() {
+                    candidate.push(b'.');
                 }
                 candidates.extend(candidates_with_damaged);
                 candidates.retain(|candidate| {});
