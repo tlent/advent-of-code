@@ -1,4 +1,5 @@
 #![feature(test)]
+
 extern crate test;
 
 const INPUT: &str = include_str!("../input.txt");
@@ -14,9 +15,9 @@ fn parse_input(input: &str) -> Vec<(&str, Vec<usize>)> {
         .collect()
 }
 
-fn part_one(input: &[(&str, Vec<usize>)]) -> u32 {
+fn part_one(input: &[(&str, Vec<usize>)]) -> usize {
     let mut arrangement_count = 0;
-    for &(row, group_sizes) in input {
+    for (row, specified_group_sizes) in input {
         let mut candidates = vec![vec![]];
         for b in row.bytes() {
             if b == b'?' {
@@ -28,16 +29,52 @@ fn part_one(input: &[(&str, Vec<usize>)]) -> u32 {
                     candidate.push(b'.');
                 }
                 candidates.extend(candidates_with_damaged);
-                candidates.retain(|candidate| {});
+                candidates.retain(|candidate| {
+                    let unknown_count = row[candidate.len()..]
+                        .bytes()
+                        .filter(|&b| b == b'?')
+                        .count();
+                    let candidate_group_sizes = group_sizes(candidate);
+                    for (candidate_group_size, specified_group_size) in candidate_group_sizes
+                        .iter()
+                        .zip(specified_group_sizes.iter())
+                    {
+                        if candidate_group_size == specified_group_size {
+                            continue;
+                        }
+                        return candidate_group_size < specified_group_size;
+                    }
+                    return true;
+                });
             } else {
                 for candidate in candidates.iter_mut() {
                     candidate.push(b);
                 }
             }
         }
-        arrangement_count += candidates.len();
+        arrangement_count += candidates
+            .iter()
+            .filter(|c| &group_sizes(c) == specified_group_sizes)
+            .count();
     }
     arrangement_count
+}
+
+fn group_sizes(bytes: &[u8]) -> Vec<usize> {
+    let mut group_sizes = vec![];
+    let mut current_group_size = 0;
+    for &b in bytes {
+        if b == b'#' {
+            current_group_size += 1;
+        } else if current_group_size > 0 {
+            group_sizes.push(current_group_size);
+            current_group_size = 0;
+        }
+    }
+    if current_group_size > 0 {
+        group_sizes.push(current_group_size);
+    }
+    group_sizes
 }
 
 fn part_two(input: &[(&str, Vec<usize>)]) -> u32 {
