@@ -20,6 +20,7 @@ fn part_one(input: &[(&str, Vec<usize>)]) -> usize {
     for (row, specified_group_sizes) in input {
         let mut candidates = vec![vec![]];
         for b in row.bytes() {
+            dbg!(candidates.len());
             if b == b'?' {
                 let mut candidates_with_damaged = candidates.clone();
                 for candidate in candidates_with_damaged.iter_mut() {
@@ -30,10 +31,6 @@ fn part_one(input: &[(&str, Vec<usize>)]) -> usize {
                 }
                 candidates.extend(candidates_with_damaged);
                 candidates.retain(|candidate| {
-                    let unknown_count = row[candidate.len()..]
-                        .bytes()
-                        .filter(|&b| b == b'?')
-                        .count();
                     let candidate_group_sizes = group_sizes(candidate);
                     for (candidate_group_size, specified_group_size) in candidate_group_sizes
                         .iter()
@@ -42,7 +39,8 @@ fn part_one(input: &[(&str, Vec<usize>)]) -> usize {
                         if candidate_group_size == specified_group_size {
                             continue;
                         }
-                        return candidate_group_size < specified_group_size;
+                        return *candidate.last().unwrap() == b'#'
+                            && candidate_group_size < specified_group_size;
                     }
                     return true;
                 });
