@@ -1,7 +1,7 @@
 #![feature(test)]
+extern crate test;
 
 use std::collections::HashMap;
-extern crate test;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -10,26 +10,34 @@ struct Input {
     right_list: Vec<u32>,
 }
 
-fn parse_input(input: &str) -> Input {
-    let (left_list, right_list) = input
-        .lines()
-        .map(|line| {
-            let mut parts = line.split_whitespace();
-            let left: u32 = parts.next().unwrap().parse().unwrap();
-            let right: u32 = parts.next().unwrap().parse().unwrap();
-            (left, right)
-        })
-        .unzip();
-    Input {
+fn parse_input(input: &str) -> Result<Input, &str> {
+    let mut left_list = vec![];
+    let mut right_list = vec![];
+    for line in input.lines() {
+        let mut parts = line.split_whitespace();
+        let left = parts
+            .next()
+            .ok_or("Missing left value")?
+            .parse()
+            .map_err(|_| "Invalid number")?;
+        let right = parts
+            .next()
+            .ok_or("Missing right value")?
+            .parse()
+            .map_err(|_| "Invalid number")?;
+        left_list.push(left);
+        right_list.push(right);
+    }
+    Ok(Input {
         left_list,
         right_list,
-    }
+    })
 }
 
 fn part_one(input: &Input) -> u32 {
     let mut sorted_left_list = input.left_list.clone();
-    sorted_left_list.sort_unstable();
     let mut sorted_right_list = input.right_list.clone();
+    sorted_left_list.sort_unstable();
     sorted_right_list.sort_unstable();
     sorted_left_list
         .into_iter()
@@ -41,34 +49,31 @@ fn part_one(input: &Input) -> u32 {
 fn part_two(input: &Input) -> u32 {
     let mut right_counts: HashMap<u32, u32> = HashMap::new();
     for &v in &input.right_list {
-        *right_counts.entry(v).or_default() += 1;
+        *right_counts.entry(v).or_insert(0) += 1;
     }
     input
         .left_list
         .iter()
-        .map(|l| l * right_counts.get(l).copied().unwrap_or_default())
+        .map(|l| l * right_counts.get(l).copied().unwrap_or(0))
         .sum()
 }
 
 fn main() {
-    let parse_result = parse_input(INPUT);
-    match std::env::args().nth(1).as_deref() {
-        Some("all") => {
-            let part_one = part_one(&parse_result);
-            println!("{part_one}");
-            let part_two = part_two(&parse_result);
-            println!("{part_two}");
+    match parse_input(INPUT) {
+        Ok(input) => {
+            let run_mode = std::env::args().nth(1);
+            match run_mode.as_deref() {
+                Some("parse") => {}
+                Some("one") => println!("{}", part_one(&input)),
+                Some("two") => println!("{}", part_two(&input)),
+                Some("all") => {
+                    println!("{}", part_one(&input));
+                    println!("{}", part_two(&input));
+                }
+                _ => eprintln!("Invalid argument: must be one of 'all', 'parse', 'one', or 'two'."),
+            }
         }
-        Some("parse") => {}
-        Some("one") => {
-            let part_one = part_one(&parse_result);
-            println!("{part_one}");
-        }
-        Some("two") => {
-            let part_two = part_two(&parse_result);
-            println!("{part_two}");
-        }
-        _ => println!("Invalid argument: must be one of all, parse, one, or two"),
+        Err(e) => eprintln!("Parse error: {e}"),
     }
 }
 
@@ -80,13 +85,13 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let input = parse_input(INPUT);
+        let input = parse_input(INPUT).unwrap();
         assert_eq!(part_one(&input), 1666427);
     }
 
     #[test]
     fn test_part_two() {
-        let input = parse_input(INPUT);
+        let input = parse_input(INPUT).unwrap();
         assert_eq!(part_two(&input), 24316233);
     }
 
@@ -97,13 +102,13 @@ mod tests {
 
     #[bench]
     fn bench_part_one(b: &mut Bencher) {
-        let input = parse_input(INPUT);
+        let input = parse_input(INPUT).unwrap();
         b.iter(|| part_one(black_box(&input)));
     }
 
     #[bench]
     fn bench_part_two(b: &mut Bencher) {
-        let input = parse_input(INPUT);
+        let input = parse_input(INPUT).unwrap();
         b.iter(|| part_two(black_box(&input)));
     }
 }
