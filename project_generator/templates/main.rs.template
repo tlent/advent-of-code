@@ -7,7 +7,6 @@ struct Input {}
 
 fn parse_input(input: &str) -> Result<Input, &str> {
     todo!()
-    Ok(Input {})
 }
 
 fn part_one(input: &Input) -> u32 {
